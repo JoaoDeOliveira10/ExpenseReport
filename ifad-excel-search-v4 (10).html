@@ -1,0 +1,1543 @@
+<!-- BUILD: 20260608-v4.0 — Country structure, clean build -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MSD Division — Excel Data Search v4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --navy:      #0a2342;
+  --navy-mid:  #0e3366;
+  --un-blue:   #009edb;
+  --un-blue-lt:#e8f5fc;
+  --white:     #ffffff;
+  --slate-50:  #f8f9fb;
+  --slate-100: #f0f2f6;
+  --slate-200: #e2e7ef;
+  --slate-300: #c8d0de;
+  --slate-500: #6b7a99;
+  --slate-700: #374357;
+  --slate-900: #1a2233;
+  --green:     #0d7a4e;
+  --green-lt:  #e6f4ef;
+  --amber:     #b45309;
+  --amber-lt:  #fef3c7;
+  --red:       #b91c1c;
+  --red-lt:    #fee2e2;
+  --shadow-xs: 0 1px 2px rgba(10,35,66,0.06);
+  --shadow-sm: 0 1px 4px rgba(10,35,66,0.08), 0 0 0 1px rgba(10,35,66,0.05);
+  --shadow-md: 0 4px 16px rgba(10,35,66,0.10), 0 0 0 1px rgba(10,35,66,0.06);
+  --shadow-lg: 0 8px 32px rgba(10,35,66,0.14), 0 0 0 1px rgba(10,35,66,0.08);
+  --radius:    10px;
+  --radius-lg: 14px;
+  --font:      'DM Sans', system-ui, sans-serif;
+  --mono:      'DM Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--slate-50); color: var(--slate-900); min-height: 100vh; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+
+/* LAYOUT */
+.app-layout { display: flex; min-height: 100vh; }
+.sidebar { width: 220px; flex-shrink: 0; background: var(--navy); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; }
+.sidebar-logo { padding: 28px 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.sidebar-logo-mark { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.sidebar-logo-emblem { width: 36px; height: 36px; background: var(--un-blue); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.sidebar-org { font-size: 13px; font-weight: 600; color: var(--white); letter-spacing: 0.01em; }
+.sidebar-dept { font-size: 10px; color: rgba(255,255,255,0.45); letter-spacing: 0.04em; text-transform: uppercase; margin-top: 2px; }
+.sidebar-nav { padding: 16px 12px; flex: 1; overflow-y: auto; }
+.sidebar-section-label { font-size: 9.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.3); padding: 0 8px; margin: 14px 0 6px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 450; cursor: pointer; transition: all 0.15s; margin-bottom: 2px; }
+.nav-item:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
+.nav-item.active { background: rgba(0,158,219,0.18); color: var(--un-blue); font-weight: 500; }
+.nav-icon { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
+
+/* sidebar saved file list */
+.saved-file-nav { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; color: rgba(255,255,255,0.5); font-size: 11.5px; cursor: default; margin-bottom: 1px; }
+.saved-file-nav .fn { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.saved-file-nav .rows-badge { font-size: 9.5px; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.35); border-radius: 4px; padding: 1px 5px; flex-shrink: 0; }
+
+.sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.06); }
+.sidebar-version { font-size: 10px; color: rgba(255,255,255,0.25); font-family: var(--mono); }
+
+/* TOPBAR */
+.main-content { margin-left: 220px; display: flex; flex-direction: column; min-height: 100vh; }
+.topbar { background: var(--white); border-bottom: 1px solid var(--slate-200); padding: 0 32px; height: 58px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 90; box-shadow: var(--shadow-xs); }
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.topbar-breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--slate-500); }
+.topbar-breadcrumb strong { color: var(--slate-900); font-weight: 500; }
+.topbar-sep { color: var(--slate-300); }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.topbar-badge { font-size: 10.5px; font-weight: 600; padding: 3px 10px; border-radius: 99px; letter-spacing: 0.02em; }
+.badge-green { background: var(--green-lt); color: var(--green); }
+.badge-blue  { background: var(--un-blue-lt); color: #0369a1; }
+.badge-amber { background: var(--amber-lt); color: var(--amber); }
+
+/* PAGE */
+.page-body { padding: 28px 32px; flex: 1; max-width: 1200px; }
+.page-header { margin-bottom: 24px; }
+.page-title { font-size: 22px; font-weight: 600; color: var(--navy); letter-spacing: -0.02em; }
+.page-subtitle { font-size: 13px; color: var(--slate-500); margin-top: 4px; max-width: 660px; }
+
+/* KPI */
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.kpi-card { background: var(--white); border: 1px solid var(--slate-200); border-radius: var(--radius-lg); padding: 18px 20px; box-shadow: var(--shadow-xs); }
+.kpi-icon { font-size: 20px; margin-bottom: 10px; }
+.kpi-label { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--slate-500); margin-bottom: 8px; }
+.kpi-value { font-size: 26px; font-weight: 700; color: var(--navy); letter-spacing: -0.03em; line-height: 1; }
+.kpi-sub { font-size: 11.5px; color: var(--slate-500); margin-top: 4px; }
+
+/* SECTION */
+.section-title { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--slate-500); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--slate-200); }
+
+/* STORAGE PANEL */
+.storage-panel { background: var(--white); border: 1.5px solid var(--un-blue); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow-xs); }
+.storage-panel.empty { border-color: var(--slate-200); border-style: dashed; }
+.storage-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.storage-title { font-size: 14px; font-weight: 600; color: var(--navy); display: flex; align-items: center; gap: 8px; }
+.storage-icon-wrap { width: 32px; height: 32px; background: var(--un-blue-lt); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+.storage-actions { display: flex; gap: 8px; }
+
+/* DROP AREA */
+.drop-area { border: 2px dashed var(--slate-300); border-radius: 10px; background: var(--slate-50); padding: 28px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
+.drop-area:hover, .drop-area.drag-over { border-color: var(--un-blue); background: var(--un-blue-lt); }
+.drop-area input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.drop-icon { font-size: 28px; margin-bottom: 8px; }
+.drop-label { font-size: 13px; font-weight: 500; color: var(--slate-700); margin-bottom: 4px; }
+.drop-sub { font-size: 11.5px; color: var(--slate-500); }
+
+/* FILE TABLE */
+.file-table-wrap { overflow-x: auto; }
+.file-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.file-table th { background: var(--slate-100); color: var(--slate-500); font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; padding: 8px 14px; text-align: left; border-bottom: 1px solid var(--slate-200); }
+.file-table td { padding: 10px 14px; border-bottom: 1px solid var(--slate-100); color: var(--slate-700); vertical-align: middle; }
+.file-table tr:last-child td { border-bottom: none; }
+.file-table tr:hover td { background: var(--slate-50); }
+.file-name-cell { font-family: var(--mono); font-size: 12px; color: var(--navy); font-weight: 500; }
+.file-meta-cell { color: var(--slate-500); font-size: 11.5px; }
+.status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; }
+.dot-green { background: var(--green); }
+.dot-blue  { background: var(--un-blue); }
+.dot-red   { background: var(--red); }
+.dot-amber { background: var(--amber); }
+
+/* BUTTONS */
+.btn-navy { display: inline-flex; align-items: center; gap: 7px; background: var(--navy); color: var(--white); padding: 9px 18px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; font-family: var(--font); transition: all 0.15s; border: none; white-space: nowrap; }
+.btn-navy:hover { background: var(--navy-mid); }
+.btn-green { display: inline-flex; align-items: center; gap: 7px; background: var(--green); color: var(--white); padding: 9px 18px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; font-family: var(--font); transition: all 0.15s; border: none; white-space: nowrap; }
+.btn-green:hover { background: #0a6540; }
+.btn-ghost { display: inline-flex; align-items: center; gap: 6px; background: transparent; color: var(--slate-500); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 500; font-family: var(--font); transition: all 0.15s; border: 1px solid var(--slate-200); white-space: nowrap; }
+.btn-ghost:hover { border-color: var(--red); color: var(--red); }
+.btn-sm { padding: 5px 10px; font-size: 11.5px; border-radius: 6px; }
+.btn-disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+
+/* SEARCH */
+.search-panel { background: var(--white); border: 1px solid var(--slate-200); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow-xs); }
+.search-wrap { display: flex; gap: 10px; align-items: center; }
+.search-input-wrap { flex: 1; position: relative; }
+.search-icon-abs { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; color: var(--slate-400); pointer-events: none; }
+#searchInput { width: 100%; padding: 13px 14px 13px 44px; border: 1.5px solid var(--slate-200); border-radius: 10px; font-size: 15px; font-family: var(--font); color: var(--slate-900); background: var(--slate-50); outline: none; transition: all 0.15s; }
+#searchInput:focus { border-color: var(--un-blue); background: var(--white); box-shadow: 0 0 0 3px rgba(0,158,219,0.12); }
+#searchInput::placeholder { color: var(--slate-300); }
+.search-options { display: flex; align-items: center; gap: 18px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--slate-100); flex-wrap: wrap; }
+.search-opt-label { font-size: 11.5px; color: var(--slate-500); font-weight: 500; }
+.search-opt { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.search-opt input[type="checkbox"] { width: 14px; height: 14px; accent-color: var(--un-blue); cursor: pointer; }
+.search-opt span { font-size: 12px; color: var(--slate-700); }
+
+/* STATUS */
+.status-bar { display: none; align-items: center; gap: 10px; padding: 12px 16px; border-radius: var(--radius); font-size: 13px; margin-bottom: 16px; border: 1px solid transparent; }
+.status-bar.info { display: flex; background: var(--un-blue-lt); border-color: rgba(0,158,219,0.2); color: #0369a1; }
+.status-bar.ok   { display: flex; background: var(--green-lt);  border-color: rgba(13,122,78,0.15);  color: var(--green); }
+.status-bar.warn { display: flex; background: var(--amber-lt); border-color: rgba(180,83,9,0.15);  color: var(--amber); }
+.status-bar.err  { display: flex; background: var(--red-lt);   border-color: rgba(185,28,28,0.15); color: var(--red); }
+.spin { width: 14px; height: 14px; border: 2px solid rgba(3,105,161,0.2); border-top-color: #0369a1; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+/* RESULTS */
+.results-area { display: none; animation: fadeUp 0.2s ease; }
+.results-area.visible { display: block; }
+.results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
+.results-count { font-size: 13px; color: var(--slate-500); }
+.results-count strong { color: var(--navy); }
+.filter-input { padding: 7px 12px; border: 1px solid var(--slate-200); border-radius: 7px; font-size: 12px; font-family: var(--font); color: var(--slate-700); background: var(--slate-50); outline: none; transition: border-color 0.15s; width: 200px; }
+.filter-input:focus { border-color: var(--un-blue); background: var(--white); }
+
+/* RESULT CARD */
+.result-card { background: var(--white); border: 1px solid var(--slate-200); border-radius: var(--radius-lg); margin-bottom: 12px; box-shadow: var(--shadow-xs); overflow: hidden; transition: box-shadow 0.2s; }
+.result-card:hover { box-shadow: var(--shadow-sm); }
+.result-card-head { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--slate-50); border-bottom: 1px solid var(--slate-100); flex-wrap: wrap; gap: 8px; }
+.result-badge { display: inline-flex; align-items: center; background: var(--navy); color: var(--white); font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 5px; font-family: var(--mono); flex-shrink: 0; letter-spacing: 0.05em; }
+.result-file { font-size: 11.5px; color: var(--slate-500); font-family: var(--mono); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.result-sheet { font-size: 11px; background: var(--un-blue-lt); color: #0369a1; padding: 2px 9px; border-radius: 4px; font-weight: 500; flex-shrink: 0; white-space: nowrap; }
+.result-table-wrap { overflow-x: auto; }
+.result-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.result-table th { background: var(--slate-100); color: var(--slate-500); font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; padding: 8px 14px; text-align: left; border-bottom: 1px solid var(--slate-200); white-space: nowrap; }
+.result-table td { padding: 9px 14px; border-bottom: none; color: var(--slate-700); vertical-align: top; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.result-table td.match-cell { color: var(--navy); font-weight: 600; font-family: var(--mono); background: #fefce8; }
+.result-table td.match-cell mark { background: #fef08a; color: var(--navy); border-radius: 3px; padding: 0 2px; }
+
+/* NO RESULTS */
+.no-results { text-align: center; padding: 48px 20px; color: var(--slate-500); background: var(--white); border: 1px solid var(--slate-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-xs); }
+.no-results-icon { font-size: 36px; margin-bottom: 12px; }
+.no-results-title { font-size: 15px; font-weight: 600; color: var(--slate-700); margin-bottom: 6px; }
+
+/* PROGRESS BAR */
+.pbar-wrap { margin-top: 10px; }
+.pbar { height: 5px; background: var(--slate-200); border-radius: 99px; overflow: hidden; }
+.pbar-fill { height: 100%; width: 0%; background: var(--un-blue); border-radius: 99px; transition: width 0.3s ease; }
+.pbar-label { font-size: 11px; color: var(--slate-500); margin-top: 5px; }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: var(--slate-100); border-radius: 99px; }
+::-webkit-scrollbar-thumb { background: var(--slate-400); border-radius: 99px; border: 3px solid var(--slate-100); }
+::-webkit-scrollbar-thumb:hover { background: var(--slate-500); }
+
+/* SUM BAR */
+.sum-bar { background: var(--navy); border-radius: 0 0 var(--radius-lg) var(--radius-lg); padding: 12px 18px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; min-height: 46px; }
+.sum-bar-label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.08em; flex-shrink: 0; }
+.sum-chip { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 7px; padding: 5px 11px; font-size: 12.5px; font-family: var(--mono); color: white; font-weight: 600; }
+.sum-chip.positive { background: rgba(13,122,78,0.35); border-color: rgba(13,122,78,0.5); color: #6ee7b7; }
+.sum-chip.negative { background: rgba(185,28,28,0.35); border-color: rgba(185,28,28,0.5); color: #fca5a5; }
+.sum-chip.zero { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
+.sum-clear { margin-left: auto; font-size: 11px; color: rgba(255,255,255,0.4); cursor: pointer; padding: 4px 8px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.15); background: transparent; font-family: var(--font); transition: all 0.15s; }
+.sum-clear:hover { background: rgba(255,255,255,0.1); color: white; }
+
+/* + BUTTON on cells */
+.cell-add-btn { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 4px; border: 1px solid var(--slate-300); background: var(--white); color: var(--slate-400); font-size: 11px; font-weight: 700; cursor: pointer; margin-left: 6px; vertical-align: middle; flex-shrink: 0; transition: all 0.12s; line-height: 1; font-family: var(--font); padding: 0; }
+.cell-add-btn:hover { background: var(--navy); border-color: var(--navy); color: white; }
+.cell-add-btn.added { background: var(--green); border-color: var(--green); color: white; }
+.result-table td { padding: 9px 14px; border-bottom: none; color: var(--slate-700); vertical-align: middle; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* EMPTY STATE */
+.empty-state { text-align: center; padding: 60px 20px; }
+.empty-state-icon { font-size: 48px; margin-bottom: 16px; }
+.empty-state-title { font-size: 16px; font-weight: 600; color: var(--slate-500); margin-bottom: 8px; }
+.empty-state-sub { font-size: 13px; line-height: 1.6; max-width: 360px; margin: 0 auto; color: var(--slate-400); }
+
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .main-content { margin-left: 0; }
+  .kpi-row { grid-template-columns: 1fr 1fr; }
+}
+
+#sec-overlay {
+  position: fixed; inset: 0; z-index: 99999;
+  background: var(--navy);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+}
+#sec-box {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  padding: 32px 48px 40px;
+  width: 400px;
+  text-align: center;
+}
+#sec-logo { margin-bottom: 0px; display: flex; justify-content: center; }
+#sec-title { font-size: 22px; font-weight: 700; color: var(--white); margin-bottom: 2px; letter-spacing: -0.02em; }
+#sec-sub { font-size: 12px; color: rgba(255,255,255,0.45); margin-bottom: 28px; line-height: 1.5; }
+#sec-input {
+  width: 100%; padding: 12px 16px; border-radius: 9px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: var(--white); font-size: 15px; font-family: var(--font);
+  outline: none; text-align: center; letter-spacing: 4px;
+  margin-bottom: 12px; transition: border-color 0.15s;
+}
+#sec-input:focus { border-color: var(--un-blue); }
+#sec-input::placeholder { letter-spacing: 2px; color: rgba(255,255,255,0.25); }
+#sec-btn {
+  width: 100%; padding: 12px; border-radius: 9px; border: none;
+  background: var(--un-blue); color: var(--white);
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  font-family: var(--font); transition: opacity 0.15s;
+}
+#sec-btn:hover { opacity: 0.88; }
+#sec-err { font-size: 11px; color: #fca5a5; margin-top: 10px; min-height: 16px; }
+#sec-notice { font-size: 10.5px; color: rgba(255,255,255,0.25); margin-top: 24px; line-height: 1.6; }
+
+#lock-overlay {
+  position: fixed; inset: 0; z-index: 99998;
+  background: rgba(10,35,66,0.85);
+  display: none; align-items: center; justify-content: center;
+  backdrop-filter: blur(8px);
+}
+#lock-overlay.show { display: flex; }
+#lock-box {
+  background: var(--white); border-radius: var(--radius-lg);
+  padding: 36px 44px; width: 340px; text-align: center;
+  box-shadow: var(--shadow-lg);
+}
+#lock-icon { font-size: 32px; margin-bottom: 12px; }
+#lock-title { font-size: 16px; font-weight: 600; color: var(--navy); margin-bottom: 4px; }
+#lock-sub { font-size: 12px; color: var(--slate-500); margin-bottom: 20px; }
+#lock-input {
+  width: 100%; padding: 11px 16px; border-radius: 9px;
+  border: 1px solid var(--slate-200); background: var(--slate-50);
+  color: var(--slate-900); font-size: 15px; font-family: var(--font);
+  outline: none; text-align: center; letter-spacing: 4px; margin-bottom: 12px;
+}
+#lock-input:focus { border-color: var(--un-blue); background: var(--white); }
+#lock-btn {
+  width: 100%; padding: 11px; border-radius: 9px; border: none;
+  background: var(--navy); color: var(--white);
+  font-size: 14px; font-weight: 600; cursor: pointer; font-family: var(--font);
+}
+#lock-err { font-size: 11px; color: var(--red); margin-top: 8px; min-height: 14px; }
+
+/* Country grid */
+.country-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 16px; }
+.country-card { background: var(--white); border: 1.5px solid var(--slate-200); border-radius: var(--radius-lg); padding: 22px 20px; cursor: pointer; transition: all 0.15s; box-shadow: var(--shadow-xs); text-align: center; }
+.country-card:hover { border-color: var(--un-blue); box-shadow: var(--shadow-sm); transform: translateY(-2px); }
+.country-card-flag { font-size: 32px; margin-bottom: 10px; }
+.country-card-name { font-size: 14px; font-weight: 600; color: var(--navy); margin-bottom: 4px; }
+.country-card-meta { font-size: 11px; color: var(--slate-500); }
+/* Add country form */
+.add-country-form { background: var(--white); border: 1px solid var(--slate-200); border-radius: var(--radius-lg); padding: 18px 20px; margin-bottom: 20px; box-shadow: var(--shadow-xs); display: none; }
+/* Back button */
+.back-btn { background: none; border: none; cursor: pointer; color: var(--slate-400); font-size: 12px; font-family: var(--font); padding: 0; display: inline-flex; align-items: center; gap: 4px; margin-bottom: 8px; transition: color 0.15s; }
+.back-btn:hover { color: var(--navy); }
+</style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo" style="padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,0.08)">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <img src="data:image/png;base64,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" width="90" height="108" style="object-fit:contain;display:block" alt="IFAD">
+        <div style="font-size:15px;font-weight:700;color:white;letter-spacing:0.02em;text-align:center">IFAD</div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.4);letter-spacing:0.06em;text-transform:uppercase;text-align:center">MSD Division</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Navigation</div>
+      <div class="nav-item active" id="navHome" onclick="showHome()"><span class="nav-icon">🌍</span> Countries</div>
+      <div class="nav-item" id="navFx" onclick="showFxPage()"><span class="nav-icon">💱</span> FX Rate Files</div>
+
+      <div class="sidebar-section-label" id="sidebarCountriesLabel" style="display:none">Countries</div>
+      <div id="sidebarCountryList"></div>
+
+      <div class="sidebar-section-label">Support</div>
+      <div class="nav-item" onclick="showHelp()"><span class="nav-icon">❓</span> Help &amp; Support</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-version">excel-search v4.0 · 2026</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-breadcrumb" id="topbarBreadcrumb">
+          <span>MSD Division</span>
+          <span class="topbar-sep">›</span>
+          <strong>Excel Data Search</strong>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-badge badge-blue" id="statusBadge">Loading…</div>
+      </div>
+    </header>
+
+    <main class="page-body">
+
+      <!-- ═══ HOME: COUNTRIES ═══ -->
+      <div id="homeView" style="display:none">
+        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <div class="page-title">Countries</div>
+            <div class="page-subtitle">Select a country to search its Excel files, or add a new one.</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <button class="btn-ghost" onclick="exportAllData()" style="font-size:12px">⬇ Export All Data</button>
+            <button class="btn-ghost" onclick="document.getElementById('importFileInput').click()" style="font-size:12px;color:var(--un-blue);border-color:rgba(0,158,219,0.3)">⬆ Import Data</button>
+            <input type="file" id="importFileInput" accept=".json" style="display:none">
+            <button class="btn-navy" onclick="showAddCountry()">＋ Add Country</button>
+          </div>
+        </div>
+
+        <!-- Import progress -->
+        <div id="importProgress" style="display:none;background:var(--white);border:1px solid var(--slate-200);border-radius:var(--radius-lg);padding:18px 20px;margin-bottom:20px;box-shadow:var(--shadow-xs)">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="spin" style="display:block;width:18px;height:18px;border-width:2px"></div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--navy)" id="importProgressTitle">Importing data…</div>
+              <div style="font-size:12px;color:var(--slate-500);margin-top:2px" id="importProgressSub">Please wait</div>
+            </div>
+          </div>
+          <div class="pbar-wrap" style="margin-top:12px">
+            <div class="pbar"><div class="pbar-fill" id="importPbarFill"></div></div>
+          </div>
+        </div>
+
+        <div class="add-country-form" id="addCountryForm">
+          <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:10px">New Country</div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <input id="newCountryInput" type="text" placeholder="e.g. Vietnam, Kenya, Ethiopia…"
+              style="flex:1;min-width:200px;padding:10px 14px;border:1.5px solid var(--slate-200);border-radius:8px;font-size:13px;font-family:var(--font);color:var(--navy);outline:none"
+              onkeydown="if(event.key==='Enter') addCountry()">
+            <button class="btn-navy" onclick="addCountry()">Add</button>
+            <button class="btn-ghost" onclick="document.getElementById('addCountryForm').style.display='none'">Cancel</button>
+          </div>
+        </div>
+
+        <div id="homeEmpty" style="display:none;text-align:center;padding:64px 20px">
+          <div style="font-size:48px;margin-bottom:16px">🌍</div>
+          <div style="font-size:16px;font-weight:600;color:var(--navy);margin-bottom:8px">No countries yet</div>
+          <div style="font-size:13px;color:var(--slate-500);margin-bottom:20px">Add your first country to get started</div>
+          <button class="btn-navy" onclick="showAddCountry()">＋ Add Country</button>
+        </div>
+
+        <div class="country-grid" id="countryGrid"></div>
+      </div>
+
+      <!-- ═══ COUNTRY VIEW ═══ -->
+      <div id="countryView" style="display:none">
+        <div class="page-header">
+          <button class="back-btn" onclick="showHome()">← Countries</button>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+            <div class="page-title" id="countryViewTitle">Country</div>
+            <button class="btn-ghost btn-sm" onclick="confirmDeleteCountry()"
+              style="color:var(--red);border-color:rgba(185,28,28,0.2)"
+              onmouseover="this.style.background='var(--red-lt)'" onmouseout="this.style.background=''">
+              🗑 Delete Country
+            </button>
+          </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="kpi-row">
+          <div class="kpi-card">
+            <div class="kpi-icon">💾</div>
+            <div class="kpi-label">Saved Files</div>
+            <div class="kpi-value" id="kpiFiles">—</div>
+            <div class="kpi-sub">This country</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon">📄</div>
+            <div class="kpi-label">Total Sheets</div>
+            <div class="kpi-value" id="kpiSheets">—</div>
+            <div class="kpi-sub">Across all files</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon">📊</div>
+            <div class="kpi-label">Indexed Rows</div>
+            <div class="kpi-value" id="kpiRows">—</div>
+            <div class="kpi-sub">Ready to search</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon">🎯</div>
+            <div class="kpi-label">Last Search</div>
+            <div class="kpi-value" id="kpiResults">—</div>
+            <div class="kpi-sub" id="kpiResultsSub">No search yet</div>
+          </div>
+        </div>
+
+        <!-- FILE MANAGEMENT -->
+        <div class="section-title">File Management</div>
+        <div class="storage-panel">
+          <div class="storage-header">
+            <div class="storage-title">
+              <div class="storage-icon-wrap">💾</div>
+              Loaded &amp; Saved Files
+            </div>
+            <div class="storage-actions">
+              <button class="btn-navy" onclick="triggerAddFiles()">➕ Add / Update Files</button>
+              <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" multiple style="display:none">
+            </div>
+          </div>
+          <div id="dropWrap">
+            <div class="drop-area" onclick="document.getElementById('fileInputDrop').click()">
+              <input type="file" id="fileInputDrop" accept=".xlsx,.xls,.csv" multiple style="display:none">
+              <div class="drop-icon">📂</div>
+              <div class="drop-label">Drag your Excel files here, or click to browse</div>
+              <div class="drop-sub">Supports .xlsx, .xls, .csv — multiple files at once, no limit</div>
+            </div>
+          </div>
+          <div id="progressWrap" style="display:none">
+            <div class="pbar-wrap">
+              <div class="pbar"><div class="pbar-fill" id="pbarFill"></div></div>
+              <div class="pbar-label" id="pbarLabel">Reading files…</div>
+            </div>
+          </div>
+          <div id="fileTableWrap" style="display:none;overflow-x:auto;margin-top:14px">
+            <table class="file-table">
+              <thead><tr><th>File</th><th>Sheets</th><th>Rows</th><th>Saved</th><th>Status</th><th></th></tr></thead>
+              <tbody id="fileTableBody"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:12px">
+            <button class="btn-green" onclick="triggerAddFiles()" style="font-size:12px;padding:7px 14px">➕ Add more files</button>
+          </div>
+        </div>
+
+        <!-- SEARCH -->
+        <div class="section-title">Search</div>
+        <div class="search-panel">
+          <div class="search-row">
+            <div class="search-input-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" class="search-input" id="searchInput"
+                placeholder="Enter a number, code or any value…"
+                autocomplete="off" spellcheck="false">
+            </div>
+            <button class="btn-navy" onclick="doSearch()" style="padding:12px 24px;font-size:13px;font-weight:600;border-radius:9px">Search</button>
+            <button class="btn-ghost" onclick="clearSearch()">Clear</button>
+          </div>
+          <div class="search-options">
+            <span class="search-opt-label">Options:</span>
+            <label class="search-opt"><input type="checkbox" id="optExact"> <span>Exact match only</span></label>
+            <label class="search-opt"><input type="checkbox" id="optCase"> <span>Case sensitive</span></label>
+          </div>
+        </div>
+
+        <div class="status-bar" id="statusBar">
+          <div class="spin" id="statusSpin" style="display:none"></div>
+          <span id="statusMsg"></span>
+        </div>
+
+        <!-- Scan Summary -->
+        <div id="scanSummary" style="display:none;margin-bottom:16px;background:var(--white);border:1px solid var(--slate-200);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-xs)">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--slate-50);border-bottom:1px solid var(--slate-100);cursor:pointer" onclick="toggleScanDetail()">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:15px">🔎</span>
+              <span style="font-size:12.5px;font-weight:600;color:var(--navy)" id="scanSummaryTitle"></span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:11px;color:var(--slate-500)">Click to see per-file breakdown</span>
+              <span id="scanChevron" style="font-size:12px;color:var(--slate-400);transition:transform 0.2s">▼</span>
+            </div>
+          </div>
+          <div id="scanDetail" style="display:none;padding:14px 18px">
+            <table style="width:100%;border-collapse:collapse;font-size:12px">
+              <thead><tr>
+                <th style="text-align:left;padding:6px 10px;background:var(--slate-100);color:var(--slate-500);font-size:10px;font-weight:600;text-transform:uppercase;border-bottom:1px solid var(--slate-200)">File</th>
+                <th style="text-align:left;padding:6px 10px;background:var(--slate-100);color:var(--slate-500);font-size:10px;font-weight:600;text-transform:uppercase;border-bottom:1px solid var(--slate-200)">Sheet</th>
+                <th style="text-align:right;padding:6px 10px;background:var(--slate-100);color:var(--slate-500);font-size:10px;font-weight:600;text-transform:uppercase;border-bottom:1px solid var(--slate-200)">Rows scanned</th>
+                <th style="text-align:right;padding:6px 10px;background:var(--slate-100);color:var(--slate-500);font-size:10px;font-weight:600;text-transform:uppercase;border-bottom:1px solid var(--slate-200)">Matches</th>
+                <th style="text-align:center;padding:6px 10px;background:var(--slate-100);color:var(--slate-500);font-size:10px;font-weight:600;text-transform:uppercase;border-bottom:1px solid var(--slate-200)">Status</th>
+              </tr></thead>
+              <tbody id="scanDetailBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div class="results-area" id="resultsArea">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div class="results-count" id="resultsCount"></div>
+            <input type="text" class="filter-input" id="filterInput" placeholder="Filter results…" oninput="filterResults()">
+          </div>
+          <div id="resultsList"></div>
+        </div>
+
+        <!-- Sum Box -->
+        <div id="sumBox" style="display:none;margin-top:20px">
+          <div style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;display:flex;align-items:center;gap:8px">
+            <span>∑ Running Sum</span>
+            <div style="flex:1;height:1px;background:var(--slate-200)"></div>
+          </div>
+          <div style="background:var(--white);border:1px solid var(--slate-200);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm)">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--slate-100);display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:52px">
+              <span style="font-size:11px;font-weight:600;color:var(--slate-400);flex-shrink:0">Values:</span>
+              <div id="sumChipsList" style="display:flex;flex-wrap:wrap;gap:6px;flex:1"></div>
+              <button onclick="clearSum()" style="flex-shrink:0;font-size:11px;color:var(--slate-400);cursor:pointer;padding:5px 11px;border-radius:6px;border:1px solid var(--slate-200);background:var(--slate-50);font-family:var(--font);transition:all 0.15s" onmouseover="this.style.background='var(--red-lt)';this.style.color='var(--red)'" onmouseout="this.style.background='var(--slate-50)';this.style.color='var(--slate-400)'">✕ Clear all</button>
+            </div>
+            <div style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;background:var(--slate-50)">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div id="sumIcon" style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;background:var(--slate-100)">∑</div>
+                <div>
+                  <div style="font-size:10px;font-weight:600;color:var(--slate-400);text-transform:uppercase;letter-spacing:0.07em">Total</div>
+                  <div id="sumCount" style="font-size:11.5px;color:var(--slate-500);margin-top:1px"></div>
+                </div>
+              </div>
+              <div id="sumTotal" style="font-size:30px;font-weight:700;font-family:var(--mono);letter-spacing:-0.03em"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FX Converter -->
+        <div id="fxConverterBox" style="display:none;margin-top:16px">
+          <div style="font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;display:flex;align-items:center;gap:8px">
+            <span>💱 Currency Conversion</span>
+            <div style="flex:1;height:1px;background:var(--slate-200)"></div>
+          </div>
+          <div style="background:var(--white);border:1px solid var(--slate-200);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm)">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--slate-100);display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--slate-50)">
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <label style="font-size:10px;font-weight:600;color:var(--slate-400);text-transform:uppercase;letter-spacing:0.07em">FX Rate File</label>
+                <select id="fxFileSelect" onchange="updateFxConverter()" style="padding:7px 10px;border:1px solid var(--slate-200);border-radius:7px;font-size:12px;font-family:var(--font);color:var(--navy);background:var(--white);cursor:pointer;min-width:220px">
+                  <option value="">— Select FX rate file —</option>
+                </select>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <label style="font-size:10px;font-weight:600;color:var(--slate-400);text-transform:uppercase;letter-spacing:0.07em">Source Currency</label>
+                <select id="fxCurrencySelect" onchange="recalcFx()" style="padding:7px 10px;border:1px solid var(--slate-200);border-radius:7px;font-size:12px;font-family:var(--font);color:var(--navy);background:var(--white);cursor:pointer;min-width:180px">
+                  <option value="">— Select currency —</option>
+                </select>
+              </div>
+              <div style="font-size:11px;color:var(--slate-400);margin-top:16px">Selected: <span id="fxFilePeriod" style="font-weight:600;color:var(--navy)">—</span></div>
+            </div>
+            <div style="padding:18px;display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:0;align-items:center">
+              <div style="background:var(--slate-50);border:1px solid var(--slate-200);border-radius:12px;padding:16px;text-align:center">
+                <div style="font-size:10px;font-weight:700;color:var(--slate-400);text-transform:uppercase;margin-bottom:8px">Original Amount</div>
+                <div id="fxBox1Currency" style="font-size:12px;font-weight:600;color:var(--un-blue);margin-bottom:6px">—</div>
+                <div id="fxBox1Amount" style="font-size:26px;font-weight:700;font-family:var(--mono);color:var(--navy)">—</div>
+                <div style="font-size:10px;color:var(--slate-400);margin-top:6px">from ∑ Running Sum</div>
+              </div>
+              <div style="text-align:center;padding:0 14px">
+                <div style="font-size:11px;color:var(--slate-400);margin-bottom:4px">÷ rate</div>
+                <div style="font-size:20px;color:var(--slate-300)">→</div>
+                <div id="fxRate1" style="font-size:10px;color:var(--slate-400);margin-top:4px">—</div>
+              </div>
+              <div style="background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:1px solid rgba(0,158,219,0.2);border-radius:12px;padding:16px;text-align:center">
+                <div style="font-size:10px;font-weight:700;color:var(--un-blue);text-transform:uppercase;margin-bottom:8px">US Dollar</div>
+                <div style="font-size:12px;font-weight:600;color:var(--un-blue);margin-bottom:6px">USD $</div>
+                <div id="fxBox2Amount" style="font-size:26px;font-weight:700;font-family:var(--mono);color:var(--navy)">—</div>
+                <div style="font-size:10px;color:var(--slate-400);margin-top:6px">intermediate step</div>
+              </div>
+              <div style="text-align:center;padding:0 14px">
+                <div style="font-size:11px;color:var(--slate-400);margin-bottom:4px">× EUR rate</div>
+                <div style="font-size:20px;color:var(--slate-300)">→</div>
+                <div id="fxRate2" style="font-size:10px;color:var(--slate-400);margin-top:4px">—</div>
+              </div>
+              <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid rgba(13,122,78,0.2);border-radius:12px;padding:16px;text-align:center">
+                <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;margin-bottom:8px">Euro</div>
+                <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px">EUR €</div>
+                <div id="fxBox3Amount" style="font-size:26px;font-weight:700;font-family:var(--mono);color:var(--navy)">—</div>
+                <div style="font-size:10px;color:var(--slate-400);margin-top:6px">final result</div>
+              </div>
+            </div>
+            <div id="fxFormula" style="display:none;padding:10px 18px 14px;border-top:1px solid var(--slate-100);font-size:11px;color:var(--slate-500);font-family:var(--mono);background:var(--slate-50)"></div>
+          </div>
+        </div>
+
+      </div><!-- end countryView -->
+
+      <!-- ═══ FX RATE FILES PAGE ═══ -->
+      <div id="fxPage" style="display:none">
+        <div class="page-header">
+          <button class="back-btn" onclick="showHome()">← Countries</button>
+          <div class="page-title">💱 FX Rate Files</div>
+          <div class="page-subtitle">UN Operational Exchange Rate files — used for currency conversion.</div>
+        </div>
+        <div class="storage-panel">
+          <div class="storage-header">
+            <div class="storage-title"><div class="storage-icon-wrap">💱</div> UN Exchange Rate Files</div>
+            <div class="storage-actions">
+              <button class="btn-ghost" onclick="exportFxData()" style="margin-right:8px">⬇ Export FX Data</button>
+              <button class="btn-navy" onclick="document.getElementById('fxFileInput').click()">➕ Add FX Rate File</button>
+              <input type="file" id="fxFileInput" accept=".xlsx,.xls,.csv" multiple style="display:none">
+            </div>
+          </div>
+          <div id="fxDropWrap">
+            <div class="drop-area" onclick="document.getElementById('fxFileInput').click()">
+              <div class="drop-icon">💱</div>
+              <div class="drop-label">Drag UN Exchange Rate files here, or click to browse</div>
+              <div class="drop-sub">Format: Country · Currency · Currency Code · Effective Date · Operational Rate</div>
+            </div>
+          </div>
+          <div id="fxTableWrap" style="display:none;overflow-x:auto;margin-top:12px">
+            <table class="file-table">
+              <thead><tr><th>File</th><th>Period</th><th>Currencies</th><th>Effective Date</th><th></th></tr></thead>
+              <tbody id="fxTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════
+var countries       = JSON.parse(localStorage.getItem('msd_countries_v4') || '[]');
+var activeCountryId = null;
+var loadedFiles     = [];
+var allResults      = [];
+var sumValues       = [];
+var primaryFile     = null;
+// Pre-loaded UN Exchange Rate files — bundled directly in the app, no upload needed.
+// Source: official UN Operational Rates of Exchange. Updated periodically by the developer.
+var BUNDLED_FX_FILES = [{"name":"META GENNAIO 2026.xlsx","period":"UN rates 15 January 2026","effectiveDate":"15/01/2026","rates":{"AFN":66.079,"ALL":82.37,"DZD":129.592,"USD":1,"EUR":0.858,"AOA":911.968,"XCD":2.7,"ARS":1467,"AMD":379.5,"AWG":1.79,"AUD":1.497,"AZN":1.698,"BSD":1,"BHD":0.377,"BDT":122.029,"BBD":2,"BYN":2.955,"BZD":2,"XOF":563.053,"BMD":1,"BTN":90.185,"BOB":6.863,"BAM":1.679,"BWP":13.831,"BRL":5.389,"BND":1.289,"BIF":2947.37,"KHR":4008.5,"XAF":563.053,"CAD":1.389,"CVE":94.648,"KYD":0.82,"CLP":882.45,"CNY":6.976,"COP":3667.6,"KMF":422.29,"CDF":2200.138,"NZD":1.741,"CRC":494.13,"CUP":24,"XCG":1.79,"CZK":20.795,"DKK":6.415,"DJF":177,"DOP":63.4,"EGP":47.096,"ERN":15,"SZL":16.433,"ETB":154.838,"FJD":2.257,"XPF":102.431,"GMD":72.7,"GEL":2.675,"GHS":10.7,"GIP":0.744,"GTQ":7.66,"GNF":8692,"GYD":208.1,"HTG":130.62,"HNL":26.155,"HKD":7.802,"HUF":331.9,"ISK":125.76,"INR":90.185,"IDR":16873,"IRR":1154684.12,"IQD":1310,"ILS":3.151,"JMD":157.36,"JPY":159.01,"JOD":0.708,"KZT":509,"KES":128.88,"KPW":110,"KRW":1476.04,"KWD":0.308,"KGS":87.358,"LAK":21478.61,"LBP":89500,"LSL":16.433,"LRD":177.709,"LYD":5.401,"CHF":0.8,"MOP":8.036,"MGA":4535.25,"MWK":1751,"MYR":4.056,"MVR":15,"MRU":39.566,"MUR":46.436,"MXN":17.882,"MDL":16.872,"MNT":3551,"MAD":9.212,"MZN":63.25,"MMK":3820,"NAD":16.433,"NPR":144.039,"NIO":36.55,"NGN":1419,"MKD":52.74,"NOK":10.083,"OMR":0.385,"PKR":279.947,"PAB":1,"PGK":4.165,"PYG":6769.4,"PEN":3.357,"PHP":59.318,"PLN":3.615,"QAR":3.647,"RON":4.369,"RUB":78.377,"RWF":1447,"SHP":0.744,"WST":2.733,"STN":21.003,"SAR":3.75,"RSD":100.616,"SCR":13.758,"SLE":23.828,"SGD":1.289,"SBD":8.006,"SOS":24300,"ZAR":16.433,"SSP":4546.887,"LKR":308.98,"SDG":2400,"SRD":38.049,"SEK":9.202,"SYP":110.05,"TJS":9.266,"TZS":2473.86,"THB":31.474,"TOP":2.335,"TTD":6.75,"TND":2.883,"TRY":43.157,"TMT":3.5,"UGX":3570.33,"UAH":43.09,"AED":3.673,"GBP":0.744,"UYU":38.51,"UZS":12030,"VUV":117.91,"VES":330.375,"VND":26275,"YER":529.73,"ZMW":19.461,"ZWG":25.218}},{"name":"META FEBBRAIO 2026.xlsx","period":"UN rates 15 Feb 2025","effectiveDate":"15/02/2026","rates":{"AFN":63.717,"ALL":80.69,"DZD":129.035,"USD":1,"EUR":0.841,"AOA":912.253,"XCD":2.7,"ARS":1391.37,"AMD":376,"AWG":1.79,"AUD":1.403,"AZN":1.698,"BSD":1,"BHD":0.377,"BDT":122.029,"BBD":2,"BYN":2.868,"BZD":2,"XOF":551.874,"BMD":1,"BTN":90.59,"BOB":6.862,"BAM":1.645,"BWP":13.55,"BRL":5.16,"BND":1.261,"BIF":2947,"KHR":4015,"XAF":551.874,"CAD":1.359,"CVE":92.769,"KYD":0.82,"CLP":853.4,"CNY":6.9,"COP":3662.85,"KMF":413.905,"CDF":2223.79,"NZD":1.649,"CRC":484,"CUP":24,"XCG":1.79,"CZK":20.398,"DKK":6.286,"DJF":177,"DOP":62.397,"EGP":46.79,"ERN":15,"SZL":15.827,"ETB":155.158,"FJD":2.195,"XPF":100.397,"GMD":72.375,"GEL":2.66,"GHS":10.98,"GIP":0.732,"GTQ":7.661,"GNF":8730,"GYD":208.1,"HTG":130.62,"HNL":26.217,"HKD":7.816,"HUF":318.75,"ISK":122.08,"INR":90.59,"IDR":16822,"IRR":1330966.683,"IQD":1310,"ILS":3.062,"JMD":155.31,"JPY":152.97,"JOD":0.708,"KZT":494.55,"KES":128.86,"KPW":110,"KRW":1435.01,"KWD":0.307,"KGS":87.396,"LAK":21348.3,"LBP":89500,"LSL":15.827,"LRD":183.125,"LYD":6.259,"CHF":0.768,"MOP":8.051,"MGA":4434.81,"MWK":1751,"MYR":3.9,"MVR":15,"MRU":39.505,"MUR":45.729,"MXN":17.145,"MDL":16.73,"MNT":3559,"MAD":9.129,"MZN":63.25,"MMK":3915,"NAD":15.827,"NPR":144.944,"NIO":36.537,"NGN":1353.86,"MKD":51.72,"NOK":9.468,"OMR":0.385,"PKR":279.523,"PAB":1,"PGK":4.182,"PYG":6540,"PEN":3.352,"PHP":58.095,"PLN":3.545,"QAR":3.646,"RON":4.283,"RUB":76.975,"RWF":1448.5,"SHP":0.732,"WST":2.653,"STN":20.789,"SAR":3.75,"RSD":98.711,"SCR":13.51,"SLE":23.837,"SGD":1.261,"SBD":7.911,"SOS":24300,"ZAR":15.827,"SSP":4550.419,"LKR":309.27,"SDG":3349.999,"SRD":37.868,"SEK":8.884,"SYP":110.5,"TJS":9.32,"TZS":2560.9,"THB":30.974,"TOP":2.307,"TTD":6.714,"TND":2.837,"TRY":43.648,"TMT":3.5,"UGX":3535.77,"UAH":43,"AED":3.673,"GBP":0.732,"UYU":38.688,"UZS":12255,"VUV":115.65,"VES":388.739,"VND":25959,"YER":529.003,"ZMW":18.5,"ZWG":25.001}},{"name":"FEBBRAIO 2026.xlsx","period":"Un rates 1 February 26","effectiveDate":"01/02/2026","rates":{"AFN":65.55,"ALL":80.31,"DZD":128.68,"USD":1,"EUR":0.835,"AOA":912.133,"XCD":2.7,"ARS":1445,"AMD":377.35,"AWG":1.79,"AUD":1.413,"AZN":1.698,"BSD":1,"BHD":0.377,"BDT":122.029,"BBD":2,"BYN":2.844,"BZD":2,"XOF":548.047,"BMD":1,"BTN":91.953,"BOB":6.862,"BAM":1.634,"BWP":13.405,"BRL":5.166,"BND":1.264,"BIF":2948.918,"KHR":4016,"XAF":548.047,"CAD":1.35,"CVE":92.125,"KYD":0.82,"CLP":851.65,"CNY":6.948,"COP":3652.89,"KMF":411.035,"CDF":2221.87,"NZD":1.644,"CRC":490.93,"CUP":24,"XCG":1.79,"CZK":20.327,"DKK":6.239,"DJF":177,"DOP":62.908,"EGP":46.796,"ERN":15,"SZL":15.681,"ETB":154.963,"FJD":2.201,"XPF":99.701,"GMD":72.375,"GEL":2.668,"GHS":10.918,"GIP":0.723,"GTQ":7.661,"GNF":8724,"GYD":208.1,"HTG":130.62,"HNL":26.178,"HKD":7.805,"HUF":318.28,"ISK":121.07,"INR":91.953,"IDR":16751,"IRR":1209074.275,"IQD":1310,"ILS":3.078,"JMD":155.966,"JPY":153.16,"JOD":0.708,"KZT":502.06,"KES":128.9,"KPW":110,"KRW":1429.59,"KWD":0.306,"KGS":87.385,"LAK":21387.84,"LBP":89500,"LSL":15.681,"LRD":180.988,"LYD":6.246,"CHF":0.766,"MOP":8.039,"MGA":4481.63,"MWK":1751,"MYR":3.928,"MVR":15,"MRU":39.478,"MUR":45.039,"MXN":17.126,"MDL":16.729,"MNT":3557,"MAD":9.053,"MZN":63.25,"MMK":3935,"NAD":15.681,"NPR":146.463,"NIO":36.553,"NGN":1375.22,"MKD":51.36,"NOK":9.494,"OMR":0.385,"PKR":279.69,"PAB":1,"PGK":4.17,"PYG":6680,"PEN":3.34,"PHP":58.933,"PLN":3.514,"QAR":3.645,"RON":4.257,"RUB":75.029,"RWF":1448,"SHP":0.723,"WST":2.68,"STN":20.883,"SAR":3.75,"RSD":98.027,"SCR":13.758,"SLE":23.831,"SGD":1.264,"SBD":7.937,"SOS":24300,"ZAR":15.681,"SSP":4543.419,"LKR":309.3,"SDG":3250,"SRD":38,"SEK":8.808,"SYP":110.5,"TJS":9.284,"TZS":2521,"THB":31.2,"TOP":2.309,"TTD":6.75,"TND":2.829,"TRY":43.423,"TMT":3.5,"UGX":3558.36,"UAH":42.769,"AED":3.673,"GBP":0.723,"UYU":38.688,"UZS":12180,"VUV":116.08,"VES":355.552,"VND":26003,"YER":529.73,"ZMW":19.75,"ZWG":25.083}},{"name":"META MARZO 2026.xlsx","period":"Un exchange rates 15 March 26","effectiveDate":"15/03/2026","rates":{"AFN":63.489,"ALL":82.96,"DZD":131.597,"USD":1,"EUR":0.867,"AOA":912.131,"XCD":2.7,"ARS":1399.774,"AMD":375.8,"AWG":1.79,"AUD":1.408,"AZN":1.698,"BSD":1,"BHD":0.377,"BDT":122.276,"BBD":2,"BYN":2.926,"BZD":2,"XOF":568.815,"BMD":1,"BTN":92.193,"BOB":6.859,"BAM":1.696,"BWP":13.661,"BRL":5.202,"BND":1.277,"BIF":2949.75,"KHR":4003,"XAF":568.815,"CAD":1.36,"CVE":95.617,"KYD":0.82,"CLP":912.05,"CNY":6.875,"COP":3720.48,"KMF":426.611,"CDF":2164.509,"NZD":1.701,"CRC":468.98,"CUP":24,"XCG":1.79,"CZK":21.179,"DKK":6.48,"DJF":177,"DOP":60.853,"EGP":52.402,"ERN":15,"SZL":16.675,"ETB":155.665,"FJD":2.195,"XPF":103.479,"GMD":72.375,"GEL":2.701,"GHS":10.82,"GIP":0.748,"GTQ":7.661,"GNF":8730,"GYD":208.4,"HTG":130.771,"HNL":26.263,"HKD":7.827,"HUF":338.57,"ISK":125.31,"INR":92.193,"IDR":16889,"IRR":1381939,"IQD":1310,"ILS":3.125,"JMD":155.398,"JPY":158.98,"JOD":0.708,"KZT":489.26,"KES":129.15,"KPW":110,"KRW":1488.93,"KWD":0.307,"KGS":87.396,"LAK":21280.27,"LBP":89500,"LSL":16.675,"LRD":182.4,"LYD":6.336,"CHF":0.783,"MOP":8.062,"MGA":4366.2,"MWK":1724,"MYR":3.924,"MVR":15,"MRU":39.508,"MUR":45.756,"MXN":17.835,"MDL":17.21,"MNT":3559,"MAD":9.388,"MZN":63.25,"MMK":3905,"NAD":16.675,"NPR":147.179,"NIO":36.564,"NGN":1383.46,"MKD":53.28,"NOK":9.672,"OMR":0.385,"PKR":279.33,"PAB":1,"PGK":4.189,"PYG":6435,"PEN":3.43,"PHP":59.378,"PLN":3.699,"QAR":3.646,"RON":4.416,"RUB":79.158,"RWF":1452,"SHP":0.748,"WST":2.65,"STN":20.936,"SAR":3.751,"RSD":101.75,"SCR":13.304,"SLE":23.84,"SGD":1.277,"SBD":7.918,"SOS":24300,"ZAR":16.675,"SSP":4568.5,"LKR":310.85,"SDG":3350,"SRD":37.433,"SEK":9.309,"SYP":110.5,"TJS":9.459,"TZS":2580,"THB":32.03,"TOP":2.298,"TTD":6.714,"TND":2.921,"TRY":44.114,"TMT":3.5,"UGX":3735.2,"UAH":44.215,"AED":3.673,"GBP":0.748,"UYU":40.024,"UZS":12090,"VUV":115.58,"VES":436.241,"VND":26269,"YER":526.26,"ZMW":19.799,"ZWG":24.852}},{"name":"MARZO 2026.xlsx","period":"downloaded","effectiveDate":"01/03/2026","rates":{"AFN":63.5,"ALL":81.18,"DZD":129.475,"USD":1,"EUR":0.847,"AOA":912.131,"XCD":2.7,"ARS":1415.091,"AMD":376,"AWG":1.79,"AUD":1.406,"AZN":1.698,"BSD":1,"BHD":0.377,"BDT":122.029,"BBD":2,"BYN":2.852,"BZD":2,"XOF":555.425,"BMD":1,"BTN":90.913,"BOB":6.862,"BAM":1.656,"BWP":13.587,"BRL":5.139,"BND":1.263,"BIF":2947.5,"KHR":4002,"XAF":555.425,"CAD":1.369,"CVE":93.366,"KYD":0.82,"CLP":860.8,"CNY":6.841,"COP":3735.6,"KMF":416.569,"CDF":2148.178,"NZD":1.671,"CRC":471.56,"CUP":24,"XCG":1.79,"CZK":20.522,"DKK":6.327,"DJF":177,"DOP":59.903,"EGP":47.9,"ERN":15,"SZL":15.897,"ETB":155.151,"FJD":2.195,"XPF":101.043,"GMD":72.375,"GEL":2.655,"GHS":10.6,"GIP":0.738,"GTQ":7.661,"GNF":8730,"GYD":208.1,"HTG":130.62,"HNL":26.241,"HKD":7.823,"HUF":317.92,"ISK":121.26,"INR":90.913,"IDR":16756,"IRR":1363276.037,"IQD":1310,"ILS":3.113,"JMD":155.01,"JPY":156.07,"JOD":0.708,"KZT":498.38,"KES":128.88,"KPW":110,"KRW":1429.1,"KWD":0.306,"KGS":87.386,"LAK":21280.27,"LBP":89500,"LSL":15.897,"LRD":182.934,"LYD":6.289,"CHF":0.774,"MOP":8.058,"MGA":4366.2,"MWK":1724,"MYR":3.887,"MVR":15,"MRU":39.505,"MUR":46.172,"MXN":17.213,"MDL":16.962,"MNT":3559,"MAD":9.155,"MZN":63.25,"MMK":3915,"NAD":15.897,"NPR":145.37,"NIO":36.495,"NGN":1358.93,"MKD":52.05,"NOK":9.57,"OMR":0.385,"PKR":279.36,"PAB":1,"PGK":4.182,"PYG":6448,"PEN":3.356,"PHP":57.605,"PLN":3.574,"QAR":3.645,"RON":4.312,"RUB":76.592,"RWF":1448.5,"SHP":0.738,"WST":2.646,"STN":20.766,"SAR":3.75,"RSD":99.38,"SCR":13.575,"SLE":23.84,"SGD":1.263,"SBD":7.93,"SOS":24300,"ZAR":15.897,"SSP":4546.364,"LKR":309.24,"SDG":3350,"SRD":37.676,"SEK":9.037,"SYP":110.5,"TJS":9.367,"TZS":2540,"THB":31.085,"TOP":2.304,"TTD":6.714,"TND":2.857,"TRY":43.882,"TMT":3.5,"UGX":3594.71,"UAH":43.1,"AED":3.673,"GBP":0.738,"UYU":38.3,"UZS":12110,"VUV":115.21,"VES":407.378,"VND":26078,"YER":529.73,"ZMW":18.69,"ZWG":25.006}},{"name":"META APRILE 2026.xlsx","period":"UN exchange rates 15 APRIL 2026","effectiveDate":"15/04/2026","rates":{"AFN":64.394,"ALL":81.46,"DZD":131.904,"USD":1,"EUR":0.854,"AOA":912.131,"XCD":2.7,"ARS":1368.873,"AMD":375.13,"AWG":1.79,"AUD":1.415,"AZN":1.698,"BSD":1,"BHD":0.377,"BDT":122.503,"BBD":2,"BYN":2.919,"BZD":2,"XOF":560.168,"BMD":1,"BTN":93.37,"BOB":6.86,"BAM":1.67,"BWP":13.889,"BRL":5.031,"BND":1.275,"BIF":2953.688,"KHR":3994.5,"XAF":560.168,"CAD":1.381,"CVE":94.163,"KYD":0.82,"CLP":900.57,"CNY":6.831,"COP":3621.04,"KMF":420.126,"CDF":2253.188,"NZD":1.711,"CRC":462.81,"CUP":24,"XCG":1.79,"CZK":20.806,"DKK":6.381,"DJF":177,"DOP":59.433,"EGP":53.11,"ERN":15,"SZL":16.501,"ETB":156.476,"FJD":2.212,"XPF":101.906,"GMD":72.925,"GEL":2.677,"GHS":11.02,"GIP":0.743,"GTQ":7.645,"GNF":8730,"GYD":208.2,"HTG":130.632,"HNL":26.446,"HKD":7.832,"HUF":310.69,"ISK":122.21,"INR":93.37,"IDR":17100,"IRR":1391142.613,"IQD":1310,"ILS":3.045,"JMD":156.711,"JPY":159.62,"JOD":0.708,"KZT":476.2,"KES":129.1,"KPW":110,"KRW":1484.99,"KWD":0.308,"KGS":87.746,"LAK":21896,"LBP":89500,"LSL":16.501,"LRD":182.715,"LYD":6.339,"CHF":0.788,"MOP":8.067,"MGA":4133.96,"MWK":1724,"MYR":3.974,"MVR":15,"MRU":39.841,"MUR":46.41,"MXN":17.353,"MDL":17.1,"MNT":3564.5,"MAD":9.283,"MZN":63.299,"MMK":4125,"NAD":16.501,"NPR":149.392,"NIO":36.517,"NGN":1357.07,"MKD":52.629,"NOK":9.48,"OMR":0.385,"PKR":279.121,"PAB":1,"PGK":4.205,"PYG":6385,"PEN":3.363,"PHP":60.14,"PLN":3.628,"QAR":3.645,"RON":4.348,"RUB":75.725,"RWF":1456,"SHP":0.743,"WST":2.678,"STN":21.057,"SAR":3.753,"RSD":100.095,"SCR":14.06,"SLE":23.865,"SGD":1.275,"SBD":7.943,"SOS":24300,"ZAR":16.501,"SSP":4603.544,"LKR":315.34,"SDG":3450,"SRD":37.284,"SEK":9.243,"SYP":110.5,"TJS":9.483,"TZS":2585.14,"THB":32.17,"TOP":2.313,"TTD":6.714,"TND":2.9,"TRY":44.716,"TMT":3.5,"UGX":3730.81,"UAH":43.51,"AED":3.673,"GBP":0.743,"UYU":40.18,"UZS":12125,"VUV":115.44,"VES":475.958,"VND":26338,"YER":526.26,"ZMW":19.08,"ZWG":24.6}},{"name":"APRILE 2026.xlsx","period":"UN rates 1 April 2026","effectiveDate":"01/04/2026","rates":{"AFN":63.88,"ALL":83.33,"DZD":132.836,"USD":1,"EUR":0.873,"AOA":912.131,"XCD":2.7,"ARS":1393.558,"AMD":376.1,"AWG":1.79,"AUD":1.463,"AZN":1.699,"BSD":1,"BHD":0.378,"BDT":122.406,"BBD":2,"BYN":2.952,"BZD":2,"XOF":572.588,"BMD":1,"BTN":94.775,"BOB":6.859,"BAM":1.707,"BWP":14.085,"BRL":5.249,"BND":1.292,"BIF":2952.375,"KHR":4003,"XAF":572.588,"CAD":1.394,"CVE":96.251,"KYD":0.82,"CLP":932.37,"CNY":6.912,"COP":3667.32,"KMF":429.441,"CDF":2221.745,"NZD":1.754,"CRC":464.12,"CUP":24,"XCG":1.79,"CZK":21.439,"DKK":6.522,"DJF":177,"DOP":60.25,"EGP":54.526,"ERN":15,"SZL":17.206,"ETB":156.107,"FJD":2.232,"XPF":104.166,"GMD":72.925,"GEL":2.68,"GHS":10.96,"GIP":0.759,"GTQ":7.647,"GNF":8730,"GYD":208.3,"HTG":130.651,"HNL":26.446,"HKD":7.835,"HUF":339.84,"ISK":125.08,"INR":94.775,"IDR":16998,"IRR":1370103.876,"IQD":1310,"ILS":3.174,"JMD":156.305,"JPY":159.59,"JOD":0.708,"KZT":480.23,"KES":129.79,"KPW":110,"KRW":1520.46,"KWD":0.309,"KGS":87.398,"LAK":21697.47,"LBP":89500,"LSL":17.206,"LRD":182.492,"LYD":6.352,"CHF":0.801,"MOP":8.07,"MGA":4175.43,"MWK":1724,"MYR":4.028,"MVR":15,"MRU":39.841,"MUR":46.688,"MXN":18.137,"MDL":17.5,"MNT":3560.5,"MAD":9.392,"MZN":63.299,"MMK":3990,"NAD":17.206,"NPR":150.96,"NIO":36.526,"NGN":1383.05,"MKD":53.534,"NOK":9.777,"OMR":0.385,"PKR":279.17,"PAB":1,"PGK":4.205,"PYG":6455,"PEN":3.48,"PHP":60.71,"PLN":3.745,"QAR":3.645,"RON":4.449,"RUB":80.975,"RWF":1456,"SHP":0.759,"WST":2.689,"STN":21.143,"SAR":3.752,"RSD":102.384,"SCR":14.273,"SLE":23.85,"SGD":1.292,"SBD":7.924,"SOS":24300,"ZAR":17.206,"SSP":4570.324,"LKR":314.88,"SDG":3350,"SRD":37.35,"SEK":9.558,"SYP":110.5,"TJS":9.475,"TZS":2570,"THB":32.93,"TOP":2.313,"TTD":6.714,"TND":2.934,"TRY":44.469,"TMT":3.5,"UGX":3750.71,"UAH":43.85,"AED":3.673,"GBP":0.759,"UYU":40.475,"UZS":12200,"VUV":116.44,"VES":465.477,"VND":26335,"YER":529.73,"ZMW":19.003,"ZWG":24.737}},{"name":"META MAGGIO 2026.xlsx","period":"UN exchange rate 15 May2026","effectiveDate":"15/05/2026","rates":{"AFN":64.05,"ALL":81.08,"DZD":132.069,"USD":1,"EUR":0.854,"AOA":913.116,"XCD":2.7,"ARS":1385.666,"AMD":367.25,"AWG":1.79,"AUD":1.38,"AZN":1.698,"BSD":1,"BHD":0.377,"BDT":122.237,"BBD":2,"BYN":2.807,"BZD":2,"XOF":560.168,"BMD":1,"BTN":95.705,"BOB":6.855,"BAM":1.67,"BWP":13.717,"BRL":4.926,"BND":1.273,"BIF":2957.508,"KHR":4003.997,"XAF":560.168,"CAD":1.371,"CVE":94.163,"KYD":0.82,"CLP":889,"CNY":6.791,"COP":3794.06,"KMF":420.126,"CDF":2210.43,"NZD":1.687,"CRC":452.3,"CUP":24,"XCG":1.79,"CZK":20.788,"DKK":6.381,"DJF":177,"DOP":59.216,"EGP":52.866,"ERN":15,"SZL":16.457,"ETB":156.62,"FJD":2.184,"XPF":101.906,"GMD":72.925,"GEL":2.66,"GHS":11.32,"GIP":0.74,"GTQ":7.62,"GNF":8742.27,"GYD":208,"HTG":130.778,"HNL":26.532,"HKD":7.832,"HUF":305.7,"ISK":122.37,"INR":95.705,"IDR":17460,"IRR":1473643.04,"IQD":1310,"ILS":2.912,"JMD":156.797,"JPY":157.78,"JOD":0.708,"KZT":469.46,"KES":129,"KPW":110,"KRW":1490.7,"KWD":0.305,"KGS":87.528,"LAK":21797.36,"LBP":89500,"LSL":16.457,"LRD":182.374,"LYD":6.304,"CHF":0.782,"MOP":8.067,"MGA":4139.92,"MWK":1724,"MYR":3.929,"MVR":15,"MRU":39.841,"MUR":46.638,"MXN":17.23,"MDL":17.03,"MNT":3569,"MAD":9.164,"MZN":63.222,"MMK":4212,"NAD":16.457,"NPR":152.83,"NIO":36.528,"NGN":1370.15,"MKD":52.459,"NOK":9.18,"OMR":0.385,"PKR":278.525,"PAB":1,"PGK":4.243,"PYG":6106.8,"PEN":3.431,"PHP":61.375,"PLN":3.629,"QAR":3.641,"RON":4.448,"RUB":73.2,"RWF":1456,"SHP":0.74,"WST":2.635,"STN":20.934,"SAR":3.752,"RSD":100.21,"SCR":13.947,"SLE":23.865,"SGD":1.273,"SBD":7.899,"SOS":24300,"ZAR":16.457,"SSP":4701.956,"LKR":324.32,"SDG":3800,"SRD":36.915,"SEK":9.326,"SYP":113,"TJS":9.285,"TZS":2583.54,"THB":32.34,"TOP":2.287,"TTD":6.726,"TND":2.882,"TRY":45.416,"TMT":3.5,"UGX":3744.24,"UAH":43.89,"AED":3.673,"GBP":0.74,"UYU":39.805,"UZS":12095,"VUV":113.96,"VES":500.46,"VND":26347,"YER":526.26,"ZMW":18.8,"ZWG":24.646}},{"name":"MAGGIO 2026.xlsx","period":"UN rates 1 MAY 2026","effectiveDate":"01/05/2026","rates":{"AFN":64.323,"ALL":81.33,"DZD":132.184,"USD":1,"EUR":0.855,"AOA":913.116,"XCD":2.7,"ARS":1400.269,"AMD":369.5,"AWG":1.79,"AUD":1.401,"AZN":1.698,"BSD":1,"BHD":0.377,"BDT":122.237,"BBD":2,"BYN":2.819,"BZD":2,"XOF":561.031,"BMD":1,"BTN":94.84,"BOB":6.857,"BAM":1.673,"BWP":13.717,"BRL":4.995,"BND":1.28,"BIF":2954.844,"KHR":4000,"XAF":561.031,"CAD":1.369,"CVE":94.308,"KYD":0.82,"CLP":898.96,"CNY":6.838,"COP":3622.01,"KMF":420.773,"CDF":2302.363,"NZD":1.712,"CRC":451.89,"CUP":24,"XCG":1.79,"CZK":20.858,"DKK":6.392,"DJF":177,"DOP":59.433,"EGP":52.99,"ERN":15,"SZL":16.712,"ETB":156.605,"FJD":2.194,"XPF":102.063,"GMD":72.925,"GEL":2.668,"GHS":11.15,"GIP":0.742,"GTQ":7.633,"GNF":8745.66,"GYD":208.1,"HTG":130.617,"HNL":26.523,"HKD":7.837,"HUF":312.18,"ISK":122.73,"INR":94.84,"IDR":17322,"IRR":1399549.264,"IQD":1310,"ILS":2.971,"JMD":156.51,"JPY":160.08,"JOD":0.708,"KZT":462.89,"KES":129,"KPW":110,"KRW":1484.63,"KWD":0.308,"KGS":87.611,"LAK":21832.66,"LBP":89500,"LSL":16.712,"LRD":182.597,"LYD":6.32,"CHF":0.79,"MOP":8.072,"MGA":4128.98,"MWK":1724,"MYR":3.95,"MVR":15,"MRU":39.841,"MUR":46.638,"MXN":17.466,"MDL":17.1,"MNT":3568.5,"MAD":9.24,"MZN":63.25,"MMK":4210,"NAD":16.712,"NPR":151.634,"NIO":36.563,"NGN":1375.35,"MKD":52.565,"NOK":9.297,"OMR":0.385,"PKR":278.67,"PAB":1,"PGK":4.243,"PYG":6140,"PEN":3.521,"PHP":61.57,"PLN":3.64,"QAR":3.645,"RON":4.36,"RUB":74.708,"RWF":1456,"SHP":0.742,"WST":2.643,"STN":20.993,"SAR":3.75,"RSD":100.315,"SCR":14.105,"SLE":23.865,"SGD":1.28,"SBD":7.911,"SOS":24300,"ZAR":16.712,"SSP":4642.125,"LKR":318.97,"SDG":3850,"SRD":37.206,"SEK":9.294,"SYP":113,"TJS":9.407,"TZS":2594.98,"THB":32.744,"TOP":2.291,"TTD":6.724,"TND":2.882,"TRY":45.068,"TMT":3.5,"UGX":3718.47,"UAH":44.05,"AED":3.673,"GBP":0.742,"UYU":40.065,"UZS":11975,"VUV":114.36,"VES":484.74,"VND":26348,"YER":526.26,"ZMW":18.772,"ZWG":24.633}},{"name":"meta maggio.xlsx","period":"UN exchange rate 15 May2026","effectiveDate":"15/05/2026","rates":{"AFN":64.05,"ALL":81.08,"DZD":132.069,"USD":1,"EUR":0.854,"AOA":913.116,"XCD":2.7,"ARS":1385.666,"AMD":367.25,"AWG":1.79,"AUD":1.38,"AZN":1.698,"BSD":1,"BHD":0.377,"BDT":122.237,"BBD":2,"BYN":2.807,"BZD":2,"XOF":560.168,"BMD":1,"BTN":95.705,"BOB":6.855,"BAM":1.67,"BWP":13.717,"BRL":4.926,"BND":1.273,"BIF":2957.508,"KHR":4003.997,"XAF":560.168,"CAD":1.371,"CVE":94.163,"KYD":0.82,"CLP":889,"CNY":6.791,"COP":3794.06,"KMF":420.126,"CDF":2210.43,"NZD":1.687,"CRC":452.3,"CUP":24,"XCG":1.79,"CZK":20.788,"DKK":6.381,"DJF":177,"DOP":59.216,"EGP":52.866,"ERN":15,"SZL":16.457,"ETB":156.62,"FJD":2.184,"XPF":101.906,"GMD":72.925,"GEL":2.66,"GHS":11.32,"GIP":0.74,"GTQ":7.62,"GNF":8742.27,"GYD":208,"HTG":130.778,"HNL":26.532,"HKD":7.832,"HUF":305.7,"ISK":122.37,"INR":95.705,"IDR":17460,"IRR":1473643.04,"IQD":1310,"ILS":2.912,"JMD":156.797,"JPY":157.78,"JOD":0.708,"KZT":469.46,"KES":129,"KPW":110,"KRW":1490.7,"KWD":0.305,"KGS":87.528,"LAK":21797.36,"LBP":89500,"LSL":16.457,"LRD":182.374,"LYD":6.304,"CHF":0.782,"MOP":8.067,"MGA":4139.92,"MWK":1724,"MYR":3.929,"MVR":15,"MRU":39.841,"MUR":46.638,"MXN":17.23,"MDL":17.03,"MNT":3569,"MAD":9.164,"MZN":63.222,"MMK":4212,"NAD":16.457,"NPR":152.83,"NIO":36.528,"NGN":1370.15,"MKD":52.459,"NOK":9.18,"OMR":0.385,"PKR":278.525,"PAB":1,"PGK":4.243,"PYG":6106.8,"PEN":3.431,"PHP":61.375,"PLN":3.629,"QAR":3.641,"RON":4.448,"RUB":73.2,"RWF":1456,"SHP":0.74,"WST":2.635,"STN":20.934,"SAR":3.752,"RSD":100.21,"SCR":13.947,"SLE":23.865,"SGD":1.273,"SBD":7.899,"SOS":24300,"ZAR":16.457,"SSP":4701.956,"LKR":324.32,"SDG":3800,"SRD":36.915,"SEK":9.326,"SYP":113,"TJS":9.285,"TZS":2583.54,"THB":32.34,"TOP":2.287,"TTD":6.726,"TND":2.882,"TRY":45.416,"TMT":3.5,"UGX":3744.24,"UAH":43.89,"AED":3.673,"GBP":0.74,"UYU":39.805,"UZS":12095,"VUV":113.96,"VES":500.46,"VND":26347,"YER":526.26,"ZMW":18.8,"ZWG":24.646}},{"name":"meta giugno.xlsx","period":"UN exchange rate 15JUNE2026","effectiveDate":"15/06/2026","rates":{"AFN":63.944,"ALL":82,"DZD":133.135,"USD":1,"EUR":0.868,"AOA":913.116,"XCD":2.7,"ARS":1426.94,"AMD":367,"AWG":1.79,"AUD":1.432,"AZN":1.699,"BSD":1,"BHD":0.377,"BDT":122.511,"BBD":2,"BYN":2.817,"BZD":2,"XOF":569.308,"BMD":1,"BTN":95.755,"BOB":6.855,"BAM":1.697,"BWP":13.966,"BRL":5.166,"BND":1.289,"BIF":2956,"KHR":4019,"XAF":569.308,"CAD":1.399,"CVE":95.7,"KYD":0.82,"CLP":912.37,"CNY":6.777,"COP":3551.2,"KMF":426.981,"CDF":2274.349,"NZD":1.732,"CRC":456,"CUP":24,"XCG":1.79,"CZK":20.996,"DKK":6.487,"DJF":177,"DOP":58.45,"EGP":51.93,"ERN":15,"SZL":16.522,"ETB":158.448,"FJD":2.208,"XPF":103.569,"GMD":72.437,"GEL":2.63,"GHS":11.1,"GIP":0.749,"GTQ":7.616,"GNF":8717.19,"GYD":208.2,"HTG":130.422,"HNL":26.637,"HKD":7.837,"HUF":308.66,"ISK":124.72,"INR":95.755,"IDR":17985,"IRR":1463363.131,"IQD":1310,"ILS":2.96,"JMD":157.327,"JPY":160.55,"JOD":0.708,"KZT":487.86,"KES":129.42,"KPW":110,"KRW":1533.1,"KWD":0.305,"KGS":87.44,"LAK":21919,"LBP":89500,"LSL":16.522,"LRD":182.084,"LYD":6.342,"CHF":0.8,"MOP":8.072,"MGA":4174,"MWK":1724,"MYR":4.061,"MVR":15,"MRU":39.841,"MUR":47.72,"MXN":17.414,"MDL":17.3,"MNT":3569,"MAD":9.282,"MZN":63.29,"MMK":4211,"NAD":16.522,"NPR":152.955,"NIO":36.511,"NGN":1361.25,"MKD":53.326,"NOK":9.524,"OMR":0.384,"PKR":278.225,"PAB":1,"PGK":4.25,"PYG":6121.8,"PEN":3.407,"PHP":61.347,"PLN":3.693,"QAR":3.641,"RON":4.546,"RUB":71.775,"RWF":1459.545,"SHP":0.749,"WST":2.675,"STN":21.028,"SAR":3.754,"RSD":101.785,"SCR":13.358,"SLE":23.88,"SGD":1.289,"SBD":7.949,"SOS":24300,"ZAR":16.522,"SSP":4714.135,"LKR":332.58,"SDG":3800,"SRD":37.026,"SEK":9.545,"SYP":113,"TJS":9.237,"TZS":2594.75,"THB":32.94,"TOP":2.311,"TTD":6.735,"TND":2.931,"TRY":46.153,"TMT":3.5,"UGX":3764.54,"UAH":44.89,"AED":3.673,"GBP":0.749,"UYU":40.538,"UZS":12015,"VUV":115.7,"VES":567.683,"VND":26321,"YER":526.26,"ZMW":17.26,"ZWG":25.765}},{"name":"giugno.xlsx","period":"downloaded (4)","effectiveDate":"01/06/2026","rates":{"AFN":63.886,"ALL":81.63,"DZD":132.695,"USD":1,"EUR":0.86,"AOA":913.116,"XCD":2.7,"ARS":1413.185,"AMD":367.25,"AWG":1.79,"AUD":1.403,"AZN":1.699,"BSD":1,"BHD":0.377,"BDT":122.397,"BBD":2,"BYN":2.732,"BZD":2,"XOF":564.07,"BMD":1,"BTN":95.693,"BOB":6.855,"BAM":1.682,"BWP":13.755,"BRL":5.062,"BND":1.279,"BIF":2958.754,"KHR":4020,"XAF":564.07,"CAD":1.385,"CVE":94.819,"KYD":0.82,"CLP":895.25,"CNY":6.777,"COP":3641.9,"KMF":423.052,"CDF":2225.62,"NZD":1.694,"CRC":450.38,"CUP":24,"XCG":1.79,"CZK":20.879,"DKK":6.426,"DJF":177,"DOP":58.353,"EGP":52.188,"ERN":15,"SZL":16.317,"ETB":158.356,"FJD":2.193,"XPF":102.616,"GMD":72.681,"GEL":2.643,"GHS":11.661,"GIP":0.746,"GTQ":7.62,"GNF":8732.53,"GYD":208.1,"HTG":130.556,"HNL":26.532,"HKD":7.834,"HUF":305.32,"ISK":123.06,"INR":95.693,"IDR":17840,"IRR":1456236.134,"IQD":1310,"ILS":2.827,"JMD":156.76,"JPY":159.46,"JOD":0.708,"KZT":484.25,"KES":129.25,"KPW":110,"KRW":1501.2,"KWD":0.309,"KGS":87.473,"LAK":21787.82,"LBP":89500,"LSL":16.317,"LRD":182.18,"LYD":6.322,"CHF":0.787,"MOP":8.069,"MGA":4157.46,"MWK":1724,"MYR":3.977,"MVR":15,"MRU":39.841,"MUR":47.052,"MXN":17.382,"MDL":17.22,"MNT":3569,"MAD":9.166,"MZN":63.222,"MMK":4213,"NAD":16.317,"NPR":152.885,"NIO":36.541,"NGN":1371.38,"MKD":52.746,"NOK":9.275,"OMR":0.385,"PKR":278.4,"PAB":1,"PGK":4.25,"PYG":5990,"PEN":3.418,"PHP":61.596,"PLN":3.639,"QAR":3.645,"RON":4.509,"RUB":70.575,"RWF":1459.08,"SHP":0.746,"WST":2.65,"STN":20.98,"SAR":3.753,"RSD":100.87,"SCR":13.726,"SLE":23.875,"SGD":1.279,"SBD":7.924,"SOS":24300,"ZAR":16.317,"SSP":4682.585,"LKR":327.75,"SDG":3800,"SRD":36.956,"SEK":9.305,"SYP":113,"TJS":9.186,"TZS":2607.46,"THB":32.66,"TOP":2.294,"TTD":6.726,"TND":2.884,"TRY":45.896,"TMT":3.5,"UGX":3765.78,"UAH":44.24,"AED":3.673,"GBP":0.746,"UYU":40.075,"UZS":11992.82,"VUV":114.79,"VES":526.869,"VND":26326,"YER":526.26,"ZMW":18.346,"ZWG":25.768}}];
+
+// User-uploaded FX files (in addition to bundled ones) still persist in localStorage
+var fxFiles = (function(){
+  var userFiles = JSON.parse(localStorage.getItem('msd_fxFiles') || '[]');
+  var userNames = userFiles.map(function(f){ return f.name; });
+  var bundled   = BUNDLED_FX_FILES.filter(function(f){ return userNames.indexOf(f.name) === -1; });
+  return bundled.concat(userFiles);
+})();
+
+// ════════════════════════════════════════════════════════
+//  INDEXEDDB
+// ════════════════════════════════════════════════════════
+var db = null;
+
+function openDB(cb){
+  var req = indexedDB.open('msd_excel_v4', 2);
+  req.onupgradeneeded = function(e){
+    var d = e.target.result;
+    if(!d.objectStoreNames.contains('files')){
+      d.createObjectStore('files', { keyPath: 'key' });
+    }
+  };
+  req.onsuccess = function(e){ db = e.target.result; cb(null); };
+  req.onerror   = function(e){ cb(e.target.error); };
+}
+
+function dbSave(cid, fileObj, cb){
+  var rec = Object.assign({}, fileObj, { key: cid+'|'+fileObj.name, cid: cid });
+  var req = db.transaction('files','readwrite').objectStore('files').put(rec);
+  req.onsuccess = function(){ cb(null); };
+  req.onerror   = function(e){ cb(e.target.error); };
+}
+
+function dbGetAll(cid, cb){
+  var req = db.transaction('files','readonly').objectStore('files').getAll();
+  req.onsuccess = function(e){
+    cb(null, (e.target.result||[]).filter(function(r){ return r.cid===cid; }));
+  };
+  req.onerror = function(e){ cb(e.target.error); };
+}
+
+function dbDelete(cid, name, cb){
+  var req = db.transaction('files','readwrite').objectStore('files').delete(cid+'|'+name);
+  req.onsuccess = function(){ cb(null); };
+  req.onerror   = function(e){ cb(e.target.error); };
+}
+
+function dbDeleteCountry(cid, cb){
+  dbGetAll(cid, function(err, files){
+    if(!files||!files.length){ cb(); return; }
+    var tx = db.transaction('files','readwrite');
+    var n = files.length, done = 0;
+    files.forEach(function(f){
+      tx.objectStore('files').delete(f.key).onsuccess = function(){ if(++done===n) cb(); };
+    });
+  });
+}
+
+// ════════════════════════════════════════════════════════
+//  BOOT
+// ════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', function(){
+  setBadge('info','Loading…');
+  openDB(function(err){
+    if(err){ setBadge('amber','DB Error'); return; }
+    showHome();
+  });
+
+  // Import file input
+  document.getElementById('importFileInput').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    this.value = '';
+    if(!file) return;
+    if(!confirm('Import data from "'+file.name+'"?\n\nThis will ADD all countries and files from the backup to your current app. Existing data will NOT be deleted.')) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){ processImport(ev.target.result); };
+    reader.readAsText(file);
+  });
+
+  // File inputs
+  document.getElementById('fileInput').addEventListener('change', function(e){ handleFiles(e.target.files); e.target.value=''; });
+  document.getElementById('fileInputDrop').addEventListener('change', function(e){ handleFiles(e.target.files); e.target.value=''; });
+  document.getElementById('fxFileInput').addEventListener('change', function(e){ handleFxFiles(e.target.files); e.target.value=''; });
+
+  // Search on Enter
+  document.getElementById('searchInput').addEventListener('keydown', function(e){ if(e.key==='Enter') doSearch(); });
+
+  // Drag & drop
+  var dropArea = document.querySelector('.drop-area');
+  if(dropArea){
+    dropArea.addEventListener('dragover', function(e){ e.preventDefault(); this.style.borderColor='var(--un-blue)'; });
+    dropArea.addEventListener('dragleave', function(){ this.style.borderColor=''; });
+    dropArea.addEventListener('drop', function(e){
+      e.preventDefault(); this.style.borderColor='';
+      handleFiles(e.dataTransfer.files);
+    });
+  }
+});
+
+// ════════════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════════════
+function showHome(){
+  activeCountryId = null;
+  loadedFiles = []; allResults = [];
+  document.getElementById('homeView').style.display    = 'block';
+  document.getElementById('countryView').style.display = 'none';
+  document.getElementById('fxPage').style.display      = 'none';
+  document.getElementById('navHome').classList.add('active');
+  document.getElementById('navFx').classList.remove('active');
+  document.getElementById('topbarBreadcrumb').innerHTML =
+    '<span>MSD Division</span><span class="topbar-sep">›</span><strong>Excel Data Search</strong>';
+  setBadge('info', countries.length + ' countr'+(countries.length!==1?'ies':'y'));
+  renderCountryGrid();
+  renderSidebarCountries();
+}
+
+function showFxPage(){
+  document.getElementById('homeView').style.display    = 'none';
+  document.getElementById('countryView').style.display = 'none';
+  document.getElementById('fxPage').style.display      = 'block';
+  document.getElementById('navFx').classList.add('active');
+  document.getElementById('navHome').classList.remove('active');
+  document.getElementById('topbarBreadcrumb').innerHTML =
+    '<span>MSD Division</span><span class="topbar-sep">›</span><strong>FX Rate Files</strong>';
+  setBadge('info', fxFiles.length+' FX file'+(fxFiles.length!==1?'s':''));
+  renderFxTable();
+}
+
+function openCountry(id){
+  var c = countries.find(function(c){ return c.id===id; });
+  if(!c) return;
+  activeCountryId = id;
+  loadedFiles = []; allResults = [];
+  primaryFile = localStorage.getItem('msd_primary_'+id) || null;
+  document.getElementById('homeView').style.display    = 'none';
+  document.getElementById('countryView').style.display = 'block';
+  document.getElementById('fxPage').style.display      = 'none';
+  document.getElementById('countryViewTitle').textContent = c.name;
+  document.getElementById('topbarBreadcrumb').innerHTML =
+    '<span>MSD Division</span><span class="topbar-sep">›</span>' +
+    '<span style="cursor:pointer;color:var(--un-blue)" onclick="showHome()">Countries</span>' +
+    '<span class="topbar-sep">›</span><strong>'+escHtml(c.name)+'</strong>';
+  renderSidebarCountries();
+  clearSearch(); clearSum();
+  populateFxSelects();
+  dbGetAll(id, function(err, files){
+    loadedFiles = files || [];
+    refreshUI();
+    setBadge(loadedFiles.length ? 'green' : 'amber',
+      loadedFiles.length ? loadedFiles.length+' file'+(loadedFiles.length!==1?'s':'')+' loaded' : 'No files');
+  });
+}
+
+// ════════════════════════════════════════════════════════
+//  COUNTRIES
+// ════════════════════════════════════════════════════════
+function saveCountries(){ localStorage.setItem('msd_countries_v4', JSON.stringify(countries)); }
+
+function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+function showAddCountry(){
+  var f = document.getElementById('addCountryForm');
+  f.style.display = 'block';
+  setTimeout(function(){ document.getElementById('newCountryInput').focus(); }, 50);
+}
+
+function addCountry(){
+  var name = document.getElementById('newCountryInput').value.trim();
+  if(!name) return;
+  if(countries.find(function(c){ return c.name.toLowerCase()===name.toLowerCase(); })){
+    alert('A country with this name already exists.'); return;
+  }
+  countries.push({ id: genId(), name: name });
+  saveCountries();
+  document.getElementById('newCountryInput').value = '';
+  document.getElementById('addCountryForm').style.display = 'none';
+  renderCountryGrid();
+  renderSidebarCountries();
+}
+
+function confirmDeleteCountry(){
+  var c = countries.find(function(c){ return c.id===activeCountryId; });
+  if(!c||!confirm('Delete "'+c.name+'" and all its files?')) return;
+  dbDeleteCountry(activeCountryId, function(){
+    countries = countries.filter(function(c){ return c.id!==activeCountryId; });
+    saveCountries();
+    showHome();
+  });
+}
+
+function renderCountryGrid(){
+  var grid = document.getElementById('countryGrid');
+  var empty = document.getElementById('homeEmpty');
+  grid.innerHTML = '';
+  if(!countries.length){ empty.style.display='block'; return; }
+  empty.style.display = 'none';
+  countries.forEach(function(c){
+    var card = document.createElement('div');
+    card.className = 'country-card';
+    card.innerHTML =
+      '<div class="country-card-flag">🌍</div>'+
+      '<div class="country-card-name">'+escHtml(c.name)+'</div>'+
+      '<div class="country-card-meta" id="cm_'+c.id+'">Loading…</div>';
+    card.onclick = function(){ openCountry(c.id); };
+    grid.appendChild(card);
+    dbGetAll(c.id, function(err, files){
+      var el = document.getElementById('cm_'+c.id);
+      if(el){ var n=(files||[]).length; el.textContent=n+' file'+(n!==1?'s':'')+' · click to open'; }
+    });
+  });
+}
+
+function renderSidebarCountries(){
+  var list  = document.getElementById('sidebarCountryList');
+  var label = document.getElementById('sidebarCountriesLabel');
+  list.innerHTML = '';
+  if(!countries.length){ label.style.display='none'; return; }
+  label.style.display = 'block';
+  countries.forEach(function(c){
+    var el = document.createElement('div');
+    el.className = 'nav-item'+(c.id===activeCountryId?' active':'');
+    el.innerHTML = '<span class="nav-icon">🌍</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escHtml(c.name)+'</span>';
+    el.onclick = function(){ openCountry(c.id); };
+    list.appendChild(el);
+  });
+}
+
+// ════════════════════════════════════════════════════════
+//  FILE HANDLING
+// ════════════════════════════════════════════════════════
+function triggerAddFiles(){ document.getElementById('fileInput').click(); }
+
+function handleFiles(files){
+  if(!activeCountryId){ showStatus('warn','⚠️ Please open a country first.'); return; }
+  var arr = Array.from(files).filter(function(f){
+    return ['xlsx','xls','csv'].includes(f.name.split('.').pop().toLowerCase());
+  });
+  if(!arr.length) return;
+  document.getElementById('progressWrap').style.display = 'block';
+  document.getElementById('dropWrap').style.display = 'none';
+  var total = arr.length, done = 0;
+
+  function next(i){
+    if(i >= arr.length){
+      document.getElementById('progressWrap').style.display = 'none';
+      refreshUI();
+      setBadge('green', loadedFiles.length+' file'+(loadedFiles.length!==1?'s':'')+' loaded');
+      showStatus('ok', '✅ '+total+' file'+(total!==1?'s':'')+' processed.');
+      return;
+    }
+    var f = arr[i];
+    setPbar(i/total*100, 'Reading: '+f.name+' ('+(i+1)+'/'+total+')');
+    var reader = new FileReader();
+    reader.onload = function(e){
+      try {
+        var wb = XLSX.read(new Uint8Array(e.target.result), { type:'array', cellDates:true });
+        var sn = wb.SheetNames[0];
+        var rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header:1, defval:'' });
+        if(!rows.length){ next(i+1); return; }
+        var headers = rows[0].map(function(h,j){ return String(h||'').trim()||'Col '+(j+1); });
+        var dataRows = rows.slice(1)
+          .filter(function(r){ return r.some(function(c){ return String(c||'').trim(); }); })
+          .map(function(r){ return r.map(function(c){ return c!=null?String(c):''; }); });
+        var fileObj = { name:f.name, savedAt:new Date().toISOString(), sheets:[{ name:sn, headers:headers, rows:dataRows }] };
+        var idx = loadedFiles.findIndex(function(x){ return x.name===f.name; });
+        if(idx!==-1) loadedFiles[idx]=fileObj; else loadedFiles.push(fileObj);
+        dbSave(activeCountryId, fileObj, function(){ next(i+1); });
+      } catch(err){ showStatus('err','✕ Error reading "'+f.name+'": '+err.message); next(i+1); }
+    };
+    reader.readAsArrayBuffer(f);
+  }
+  next(0);
+}
+
+function removeFile(name){
+  if(!confirm('Remove "'+name+'"?')) return;
+  dbDelete(activeCountryId, name, function(){
+    loadedFiles = loadedFiles.filter(function(f){ return f.name!==name; });
+    refreshUI();
+    setBadge(loadedFiles.length?'green':'amber', loadedFiles.length?(loadedFiles.length+' files loaded'):'No files');
+    showStatus('warn','🗑️ "'+name+'" removed.');
+  });
+}
+
+// ════════════════════════════════════════════════════════
+//  PRIMARY FILE
+// ════════════════════════════════════════════════════════
+function setPrimary(name){
+  primaryFile = (primaryFile===name) ? null : name;
+  if(primaryFile) localStorage.setItem('msd_primary_'+activeCountryId, primaryFile);
+  else localStorage.removeItem('msd_primary_'+activeCountryId);
+  renderFileTable();
+}
+
+// ════════════════════════════════════════════════════════
+//  UI REFRESH
+// ════════════════════════════════════════════════════════
+function refreshUI(){
+  var hasFiles = loadedFiles.length > 0;
+  document.getElementById('dropWrap').style.display      = hasFiles ? 'none'  : 'block';
+  document.getElementById('fileTableWrap').style.display = hasFiles ? 'block' : 'none';
+  var totalSheets = 0, totalRows = 0;
+  loadedFiles.forEach(function(f){ totalSheets += f.sheets.length; f.sheets.forEach(function(s){ totalRows += s.rows.length; }); });
+  document.getElementById('kpiFiles').textContent   = loadedFiles.length || '—';
+  document.getElementById('kpiSheets').textContent  = totalSheets || '—';
+  document.getElementById('kpiRows').textContent    = totalRows ? totalRows.toLocaleString('en-US') : '—';
+  renderFileTable();
+}
+
+function renderFileTable(){
+  var tbody = document.getElementById('fileTableBody');
+  tbody.innerHTML = '';
+  var sorted = loadedFiles.slice().sort(function(a,b){ return a.name===primaryFile?-1:b.name===primaryFile?1:0; });
+  sorted.forEach(function(f){
+    var isPrimary = f.name===primaryFile;
+    var rows = f.sheets.reduce(function(s,sh){ return s+sh.rows.length; },0);
+    var saved = f.savedAt ? new Date(f.savedAt).toLocaleDateString('en-GB') : '—';
+    var tr = document.createElement('tr');
+    if(isPrimary) tr.style.background = 'linear-gradient(90deg,rgba(0,158,219,0.06),transparent)';
+    tr.innerHTML =
+      '<td class="file-name-cell">'+(isPrimary?'<span style="color:var(--un-blue);margin-right:4px">⭐</span>':'<span style="margin-right:4px">📊</span>')+escHtml(f.name)+
+        (isPrimary?'<span style="font-size:9px;font-weight:700;background:var(--un-blue-lt);color:var(--un-blue);padding:2px 6px;border-radius:4px;margin-left:6px">PRIMARY</span>':'')+
+      '</td>'+
+      '<td class="file-meta-cell">'+f.sheets.length+' sheet'+(f.sheets.length!==1?'s':'')+'</td>'+
+      '<td class="file-meta-cell">'+rows.toLocaleString('en-US')+'</td>'+
+      '<td class="file-meta-cell">'+saved+'</td>'+
+      '<td><span class="status-dot dot-green"></span><span style="font-size:11px;color:var(--green)">Ready</span></td>'+
+      '<td style="text-align:right;display:flex;gap:6px;justify-content:flex-end">'+
+        '<button class="btn-ghost btn-sm" style="'+(isPrimary?'background:var(--un-blue-lt);color:var(--un-blue)':'')+'" onclick=\'setPrimary('+JSON.stringify(f.name)+')\'>'+
+          (isPrimary?'⭐ Primary':'☆ Set Primary')+'</button>'+
+        '<button class="btn-ghost btn-sm" onclick=\'removeFile('+JSON.stringify(f.name)+')\'>✕ Remove</button>'+
+      '</td>';
+    tbody.appendChild(tr);
+  });
+}
+
+// ════════════════════════════════════════════════════════
+//  SEARCH
+// ════════════════════════════════════════════════════════
+function normCell(val){
+  var s = String(val||'').trim();
+  var n = parseFloat(s.replace(/,/g,''));
+  if(!isNaN(n)&&isFinite(n)){
+    var clean = String(n%1===0?Math.trunc(n):n);
+    return s===clean?[s]:[s,clean];
+  }
+  return [s];
+}
+
+function doSearch(){
+  var query = document.getElementById('searchInput').value.trim();
+  if(!query){ showStatus('warn','⚠️ Please enter a value to search.'); return; }
+  if(!loadedFiles.length){ showStatus('warn','⚠️ No files loaded.'); return; }
+  var exact = document.getElementById('optExact').checked;
+  var caseSens = document.getElementById('optCase').checked;
+  var qNorm = caseSens ? query : query.toLowerCase();
+  allResults = [];
+  var scanLog = [];
+
+  loadedFiles.forEach(function(file){
+    file.sheets.forEach(function(sheet){
+      var hits = 0;
+      sheet.rows.forEach(function(row, ri){
+        var matchCol = -1;
+        for(var ci=0; ci<row.length; ci++){
+          var found = normCell(row[ci]).some(function(v){
+            var vn = caseSens?v:v.toLowerCase();
+            return exact ? vn===qNorm : vn.indexOf(qNorm)!==-1;
+          });
+          if(found){ matchCol=ci; break; }
+        }
+        if(matchCol!==-1){
+          hits++;
+          allResults.push({ file:file.name, sheet:sheet.name, rowNum:ri+2, headers:sheet.headers, row:row, matchCol:matchCol });
+        }
+      });
+      scanLog.push({ file:file.name, sheet:sheet.name, rows:sheet.rows.length, hits:hits });
+    });
+  });
+
+  if(primaryFile){
+    allResults.sort(function(a,b){ return a.file===primaryFile?-1:b.file===primaryFile?1:0; });
+  }
+
+  var totalRows = scanLog.reduce(function(s,e){ return s+e.rows; },0);
+  document.getElementById('kpiResults').textContent = allResults.length;
+  document.getElementById('kpiResultsSub').textContent = allResults.length+' match'+(allResults.length!==1?'es':'');
+
+  renderScanSummary(scanLog, loadedFiles.length, scanLog.length, totalRows, allResults.length);
+  renderResults(allResults, query, caseSens);
+  showStatus(allResults.length?'ok':'warn',
+    allResults.length ? '✅ '+allResults.length+' row'+(allResults.length!==1?'s':'')+' found for "'+query+'"'
+                      : '⚠️ No matches found for "'+query+'".');
+  setBadge(allResults.length?'green':'amber', allResults.length+' result'+(allResults.length!==1?'s':''));
+}
+
+function renderScanSummary(log, nFiles, nSheets, nRows, nHits){
+  var panel = document.getElementById('scanSummary');
+  panel.style.display = 'block';
+  document.getElementById('scanSummaryTitle').innerHTML =
+    'Scan complete — <strong>'+nFiles+'</strong> file'+(nFiles!==1?'s':'')+' · '+
+    '<strong>'+nSheets+'</strong> sheet'+(nSheets!==1?'s':'')+' · '+
+    '<strong>'+nRows.toLocaleString('en-US')+'</strong> rows scanned · '+
+    '<strong style="color:'+(nHits>0?'var(--green)':'var(--slate-500)')+'">'+nHits+' match'+(nHits!==1?'es':'')+'</strong>';
+  var tbody = document.getElementById('scanDetailBody');
+  tbody.innerHTML = '';
+  log.forEach(function(e){
+    var tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--slate-100)';
+    tr.innerHTML =
+      '<td style="padding:7px 10px;color:var(--navy);font-size:11.5px">📊 '+escHtml(e.file)+'</td>'+
+      '<td style="padding:7px 10px;color:var(--slate-600);font-size:12px">'+escHtml(e.sheet)+'</td>'+
+      '<td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:12px">'+e.rows.toLocaleString('en-US')+'</td>'+
+      '<td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:12px;font-weight:600;color:'+(e.hits>0?'var(--green)':'var(--slate-400)')+'">'+(e.hits||'—')+'</td>'+
+      '<td style="padding:7px 10px;text-align:center">'+(e.hits>0?
+        '<span style="background:var(--green-lt);color:var(--green);font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px">✓ Found</span>':
+        '<span style="background:var(--slate-100);color:var(--slate-400);font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px">None</span>')+
+      '</td>';
+    tbody.appendChild(tr);
+  });
+  document.getElementById('scanDetail').style.display = 'none';
+  document.getElementById('scanChevron').style.transform = '';
+}
+
+function toggleScanDetail(){
+  var d = document.getElementById('scanDetail');
+  var open = d.style.display!=='none';
+  d.style.display = open?'none':'block';
+  document.getElementById('scanChevron').style.transform = open?'':'rotate(180deg)';
+}
+
+function renderResults(results, query, caseSens){
+  var list = document.getElementById('resultsList');
+  list.innerHTML = '';
+  var rc = document.getElementById('resultsCount');
+  if(!results.length){
+    document.getElementById('resultsArea').classList.add('visible');
+    list.innerHTML = '<div class="no-results"><div class="no-results-icon">🔍</div><div class="no-results-title">No matching rows</div><div style="font-size:12.5px;color:var(--slate-500);margin-top:4px">Try a different term or disable "Exact match only".</div></div>';
+    rc.innerHTML = 'No results';
+    return;
+  }
+  rc.innerHTML = '<strong>'+results.length+'</strong> row'+(results.length!==1?'s':'')+' found';
+  results.forEach(function(res){
+    var isPrimary = res.file===primaryFile;
+    var card = document.createElement('div');
+    card.className = 'result-card';
+    card.dataset.searchable = (res.file+' '+res.sheet+' '+res.row.join(' ')).toLowerCase();
+    if(isPrimary) card.style.borderColor = 'var(--un-blue)';
+    var ths = res.headers.map(function(h,i){
+      return '<th style="'+(i===res.matchCol?'background:#fef9c3;color:var(--amber)':'')+'">'+(h||'')+'</th>';
+    }).join('');
+    var tds = res.row.map(function(cell,i){
+      var val = cell||'';
+      var btn = '<button class="cell-add-btn" title="Add to sum" data-val="'+escHtml(val)+'" onclick="addToSum(this)">+</button>';
+      if(i===res.matchCol) return '<td class="match-cell" style="white-space:nowrap">'+highlightMatch(val,query,caseSens)+btn+'</td>';
+      var disp = val.length>50?val.slice(0,50)+'…':val;
+      return '<td style="white-space:nowrap" title="'+escHtml(val)+'">'+escHtml(disp)+btn+'</td>';
+    }).join('');
+    card.innerHTML =
+      '<div class="result-card-head" style="'+(isPrimary?'background:linear-gradient(90deg,var(--un-blue),#0e3d6e)':'')+'">' +
+        '<div class="result-badge" style="'+(isPrimary?'background:rgba(255,255,255,0.18);color:white':'')+'">ROW '+res.rowNum+'</div>'+
+        (isPrimary?'<span style="font-size:9.5px;font-weight:700;background:rgba(255,255,255,0.15);color:white;padding:2px 8px;border-radius:4px">⭐ PRIMARY</span>':'')+
+        '<div class="result-file" style="'+(isPrimary?'color:rgba(255,255,255,0.8)':'')+'">📁 '+escHtml(res.file)+'</div>'+
+        '<div class="result-sheet" style="'+(isPrimary?'color:rgba(255,255,255,0.55)':'')+'">📋 '+escHtml(res.sheet)+'</div>'+
+      '</div>'+
+      '<div class="result-table-wrap" style="'+(isPrimary?'background:#f0f9ff':'')+'">'+
+        '<table class="result-table"><thead><tr>'+ths+'</tr></thead><tbody><tr>'+tds+'</tr></tbody></table>'+
+      '</div>';
+    list.appendChild(card);
+  });
+  document.getElementById('resultsArea').classList.add('visible');
+}
+
+function filterResults(){
+  var q = document.getElementById('filterInput').value.toLowerCase();
+  document.querySelectorAll('.result-card').forEach(function(c){
+    c.style.display = (!q || c.dataset.searchable.indexOf(q)!==-1) ? '' : 'none';
+  });
+}
+
+function clearSearch(){
+  document.getElementById('searchInput').value = '';
+  document.getElementById('filterInput').value = '';
+  allResults = [];
+  document.getElementById('resultsList').innerHTML = '';
+  document.getElementById('resultsArea').classList.remove('visible');
+  document.getElementById('statusBar').className = 'status-bar';
+  document.getElementById('scanSummary').style.display = 'none';
+  document.getElementById('kpiResults').textContent = '—';
+  document.getElementById('kpiResultsSub').textContent = 'No search yet';
+  sumValues = [];
+  document.getElementById('sumBox').style.display = 'none';
+  document.getElementById('fxConverterBox').style.display = 'none';
+}
+
+// ════════════════════════════════════════════════════════
+//  SUM
+// ════════════════════════════════════════════════════════
+function parseNum(raw){
+  var s = String(raw).trim().replace(/[€$£¥\s]/g,'').replace(/\(([^)]+)\)/,'-$1').replace(/,(?=\d{3})/g,'').replace(',','.');
+  var n = parseFloat(s);
+  return isFinite(n)?n:null;
+}
+
+function fmtNum(n){
+  var neg = n<0, abs = Math.abs(n);
+  return (neg?'−':'') + abs.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2});
+}
+
+function addToSum(btn){
+  var n = parseNum(btn.getAttribute('data-val')||'');
+  if(n===null){
+    btn.style.background='var(--red)'; btn.style.color='white'; btn.textContent='✕';
+    setTimeout(function(){ btn.style.background=''; btn.style.color=''; btn.textContent='+'; },800);
+    return;
+  }
+  sumValues.push(n);
+  btn.classList.add('added'); btn.textContent='✓'; btn.disabled=true;
+  updateSumBox();
+}
+
+function updateSumBox(){
+  var box = document.getElementById('sumBox');
+  if(!sumValues.length){ box.style.display='none'; return; }
+  box.style.display = 'block';
+  var total = sumValues.reduce(function(a,b){ return a+b; },0);
+  var isPos = total>0, isNeg = total<0;
+  document.getElementById('sumChipsList').innerHTML = sumValues.map(function(v){
+    var pos=v>=0, bg=pos?'var(--green-lt)':'var(--red-lt)', col=pos?'var(--green)':'var(--red)';
+    return '<span style="background:'+bg+';color:'+col+';border-radius:5px;padding:3px 9px;font-size:12px;font-family:var(--mono);font-weight:600">'+(pos?'+':'−')+Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})+'</span>';
+  }).join('');
+  document.getElementById('sumCount').textContent = sumValues.length+' value'+(sumValues.length!==1?'s':'')+' selected';
+  var icon = document.getElementById('sumIcon');
+  icon.style.background = isPos?'var(--green-lt)':isNeg?'var(--red-lt)':'var(--slate-100)';
+  icon.style.color       = isPos?'var(--green)':isNeg?'var(--red)':'var(--slate-400)';
+  var tot = document.getElementById('sumTotal');
+  tot.textContent = fmtNum(total);
+  tot.style.color = isPos?'var(--green)':isNeg?'var(--red)':'var(--slate-500)';
+  // FX
+  if(fxFiles.length){ document.getElementById('fxConverterBox').style.display='block'; }
+  var fi = document.getElementById('fxFileSelect').value;
+  var cc = document.getElementById('fxCurrencySelect').value;
+  if(fi!==''&&cc!=='') recalcFx();
+}
+
+function clearSum(){
+  sumValues = [];
+  document.getElementById('sumBox').style.display='none';
+  document.getElementById('fxConverterBox').style.display='none';
+  document.querySelectorAll('.cell-add-btn').forEach(function(b){
+    b.classList.remove('added'); b.textContent='+'; b.disabled=false; b.style.background=''; b.style.color='';
+  });
+}
+
+// ════════════════════════════════════════════════════════
+//  FX
+// ════════════════════════════════════════════════════════
+function handleFxFiles(files){
+  Array.from(files).forEach(function(f){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      try {
+        var wb  = XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
+        var sn  = wb.SheetNames[0];
+        var rows= XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:''});
+        var rates={}, date='';
+        rows.slice(1).forEach(function(r){
+          var code=String(r[2]||'').trim().toUpperCase(), rate=parseFloat(r[4]);
+          if(code&&!isNaN(rate)){
+            rates[code]=rate;
+            if(!date&&r[3]) date=r[3] instanceof Date?r[3].toLocaleDateString('en-GB'):String(r[3]);
+          }
+        });
+        var obj={name:f.name, period:sn, effectiveDate:date, rates:rates};
+
+        // Separate user-uploaded files from bundled ones for storage
+        var userFiles = JSON.parse(localStorage.getItem('msd_fxFiles') || '[]');
+        var idx = userFiles.findIndex(function(x){ return x.name===f.name; });
+        if(idx!==-1) userFiles[idx]=obj; else userFiles.push(obj);
+        localStorage.setItem('msd_fxFiles', JSON.stringify(userFiles));
+
+        // Rebuild combined list (bundled + user), avoiding name collisions (user overrides bundled)
+        rebuildFxFiles();
+        renderFxTable(); populateFxSelects();
+        showStatus('ok','✅ FX file "'+f.name+'" loaded — '+Object.keys(rates).length+' currencies.');
+      } catch(err){ showStatus('err','✕ Error reading FX file: '+err.message); }
+    };
+    reader.readAsArrayBuffer(f);
+  });
+}
+
+function rebuildFxFiles(){
+  var userFiles = JSON.parse(localStorage.getItem('msd_fxFiles') || '[]');
+  var userNames = userFiles.map(function(f){ return f.name; });
+  var bundled   = BUNDLED_FX_FILES.filter(function(f){ return userNames.indexOf(f.name) === -1; });
+  fxFiles = bundled.concat(userFiles);
+}
+
+function renderFxTable(){
+  var tbody=document.getElementById('fxTableBody');
+  var wrap=document.getElementById('fxTableWrap');
+  var drop=document.getElementById('fxDropWrap');
+  if(!tbody) return;
+  tbody.innerHTML='';
+  if(!fxFiles.length){ wrap.style.display='none'; drop.style.display='block'; return; }
+  wrap.style.display='block'; drop.style.display='none';
+  fxFiles.forEach(function(f){
+    var isBundled = BUNDLED_FX_FILES.some(function(b){ return b.name===f.name; }) &&
+                    JSON.parse(localStorage.getItem('msd_fxFiles')||'[]').every(function(u){ return u.name!==f.name; });
+    var tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td class="file-name-cell">'+(isBundled?'⭐ ':'💱 ')+escHtml(f.name)+
+        (isBundled?'<span style="font-size:9px;font-weight:700;background:var(--un-blue-lt);color:var(--un-blue);padding:2px 6px;border-radius:4px;margin-left:6px">BUILT-IN</span>':'')+
+      '</td>'+
+      '<td class="file-meta-cell">'+escHtml(f.period)+'</td>'+
+      '<td class="file-meta-cell">'+Object.keys(f.rates).length+' currencies</td>'+
+      '<td class="file-meta-cell">'+escHtml(f.effectiveDate)+'</td>'+
+      '<td style="text-align:right">'+(isBundled?'<span style="font-size:11px;color:var(--slate-400)">Built-in</span>':'<button class="btn-ghost btn-sm" onclick=\'removeFxFile('+JSON.stringify(f.name)+')\'>✕ Remove</button>')+'</td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function removeFxFile(name){
+  if(!confirm('Remove FX file "'+name+'"?')) return;
+  var userFiles = JSON.parse(localStorage.getItem('msd_fxFiles') || '[]');
+  userFiles = userFiles.filter(function(f){ return f.name!==name; });
+  localStorage.setItem('msd_fxFiles', JSON.stringify(userFiles));
+  rebuildFxFiles();
+  renderFxTable(); populateFxSelects();
+}
+
+function exportFxData(){
+  var userFiles = JSON.parse(localStorage.getItem('msd_fxFiles') || '[]');
+  if(!userFiles.length){ alert('No additional FX files to export — only built-in ones are loaded.'); return; }
+  var blob = new Blob([JSON.stringify(userFiles, null, 2)], { type: 'application/json' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url;
+  a.download = 'fx_rates_export.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showStatus('ok', '⬇️ Exported '+userFiles.length+' additional FX file'+(userFiles.length!==1?'s':'')+' to fx_rates_export.json.');
+}
+
+function populateFxSelects(){
+  var sel=document.getElementById('fxFileSelect');
+  var cur=sel.value;
+  sel.innerHTML='<option value="">— Select FX rate file —</option>';
+  fxFiles.forEach(function(f,i){
+    var o=document.createElement('option');
+    o.value=i; o.textContent=f.name+(f.effectiveDate?' ('+f.effectiveDate+')':'');
+    sel.appendChild(o);
+  });
+  if(cur!=='') sel.value=cur;
+  recalcFx();
+}
+
+function updateFxConverter(){
+  var fi=document.getElementById('fxFileSelect').value;
+  var csel=document.getElementById('fxCurrencySelect');
+  var cur=csel.value;
+  csel.innerHTML='<option value="">— Select currency —</option>';
+  if(fi===''||!fxFiles.length) return;
+  var fx=fxFiles[parseInt(fi)];
+  document.getElementById('fxFilePeriod').textContent=fx.period+(fx.effectiveDate?' · '+fx.effectiveDate:'');
+  Object.keys(fx.rates).sort().forEach(function(code){
+    var o=document.createElement('option'); o.value=code;
+    o.textContent=code+'  (rate: '+fx.rates[code]+')';
+    csel.appendChild(o);
+  });
+  if(cur) csel.value=cur;
+  recalcFx();
+}
+
+function recalcFx(){
+  var fi=document.getElementById('fxFileSelect').value;
+  var code=document.getElementById('fxCurrencySelect').value;
+  var totEl=document.getElementById('sumTotal');
+  if(fi===''||code===''||!totEl.textContent||totEl.textContent==='—'){
+    ['fxBox1Amount','fxBox2Amount','fxBox3Amount'].forEach(function(id){ document.getElementById(id).textContent='—'; });
+    document.getElementById('fxFormula').style.display='none';
+    return;
+  }
+  var fx=fxFiles[parseInt(fi)];
+  var sr=fx.rates[code], er=fx.rates['EUR'];
+  if(!sr||!er){ document.getElementById('fxBox3Amount').textContent='— (rate missing)'; return; }
+  var raw=totEl.textContent.replace(/[^0-9.]/g,'');
+  var isNeg=totEl.textContent.startsWith('−');
+  var total=parseFloat(raw)*(isNeg?-1:1);
+  if(isNaN(total)) return;
+  var usd=total/sr, eur=usd*er;
+  document.getElementById('fxBox1Currency').textContent=code;
+  document.getElementById('fxBox1Amount').textContent=fmtNum(total); document.getElementById('fxBox1Amount').style.color=total<0?'var(--red)':'var(--navy)';
+  document.getElementById('fxRate1').textContent='1 USD = '+sr+' '+code;
+  document.getElementById('fxBox2Amount').textContent=fmtNum(usd); document.getElementById('fxBox2Amount').style.color=usd<0?'var(--red)':'var(--navy)';
+  document.getElementById('fxRate2').textContent='1 USD = '+er+' EUR';
+  document.getElementById('fxBox3Amount').textContent=fmtNum(eur); document.getElementById('fxBox3Amount').style.color=eur<0?'var(--red)':'var(--navy)';
+  var f2=function(n){ var neg=n<0,abs=Math.abs(n); return (neg?'−':'')+abs.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); };
+  document.getElementById('fxFormula').style.display='block';
+  document.getElementById('fxFormula').textContent='📐 '+code+' '+f2(total)+' ÷ '+sr+' = USD '+f2(usd)+'  ×  '+er+' = EUR '+f2(eur);
+  document.getElementById('fxConverterBox').style.display='block';
+}
+
+// ════════════════════════════════════════════════════════
+//  EXPORT / IMPORT ALL DATA
+// ════════════════════════════════════════════════════════
+function exportAllData(){
+  setBadge('info','Exporting…');
+  // Gather all files from IndexedDB for all countries
+  var req = db.transaction('files','readonly').objectStore('files').getAll();
+  req.onsuccess = function(e){
+    var allFiles = e.target.result || [];
+    var userFxFiles = JSON.parse(localStorage.getItem('msd_fxFiles') || '[]');
+    var payload = {
+      version: 4,
+      exportedAt: new Date().toISOString(),
+      countries: countries,
+      files: allFiles,
+      userFxFiles: userFxFiles
+    };
+    var json = JSON.stringify(payload);
+    var blob = new Blob([json], { type: 'application/json' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href = url;
+    a.download = 'msd-data-backup-' + new Date().toISOString().slice(0,10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    var nFiles = allFiles.length;
+    var sizeMB = (json.length / 1024 / 1024).toFixed(1);
+    setBadge('green', 'Exported');
+    showStatus('ok', '✅ Exported ' + countries.length + ' countr'+(countries.length!==1?'ies':'y')+', ' + nFiles + ' file'+(nFiles!==1?'s':'')+' ('+sizeMB+' MB) — share the .json file with your colleagues.');
+  };
+  req.onerror = function(){ showStatus('err','✕ Export failed.'); };
+}
+
+function processImport(jsonText){
+  try {
+    var payload = JSON.parse(jsonText);
+    if(!payload.countries || !payload.files){
+      alert('Invalid backup file — missing required data.');
+      return;
+    }
+
+    document.getElementById('importProgress').style.display = 'block';
+    document.getElementById('importProgressTitle').textContent = 'Importing data…';
+    document.getElementById('importPbarFill').style.width = '0%';
+
+    // 1. Merge countries
+    var added = 0;
+    payload.countries.forEach(function(c){
+      if(!countries.find(function(x){ return x.name.toLowerCase()===c.name.toLowerCase(); })){
+        countries.push(c);
+        added++;
+      }
+    });
+    saveCountries();
+    document.getElementById('importProgressSub').textContent = 'Added '+added+' new countr'+(added!==1?'ies':'y')+'…';
+    document.getElementById('importPbarFill').style.width = '20%';
+
+    // 2. Import user FX files
+    if(payload.userFxFiles && payload.userFxFiles.length){
+      var userFx = JSON.parse(localStorage.getItem('msd_fxFiles') || '[]');
+      payload.userFxFiles.forEach(function(f){
+        if(!userFx.find(function(x){ return x.name===f.name; })) userFx.push(f);
+      });
+      localStorage.setItem('msd_fxFiles', JSON.stringify(userFx));
+      rebuildFxFiles();
+    }
+    document.getElementById('importPbarFill').style.width = '30%';
+
+    // 3. Import files into IndexedDB
+    var files = payload.files || [];
+    var total = files.length;
+    var done  = 0;
+
+    if(total === 0){ finishImport(added, 0); return; }
+
+    function importNext(i){
+      if(i >= files.length){ finishImport(added, total); return; }
+      var rec = files[i];
+      if(!rec.key && rec.cid && rec.name) rec.key = rec.cid+'|'+rec.name;
+      if(!rec.key){ importNext(i+1); return; }
+      var req = db.transaction('files','readwrite').objectStore('files').put(rec);
+      req.onsuccess = function(){
+        done++;
+        document.getElementById('importPbarFill').style.width = (30 + Math.round(done/total*70))+'%';
+        document.getElementById('importProgressSub').textContent = 'Importing files: '+done+' / '+total;
+        importNext(i+1);
+      };
+      req.onerror = function(){ importNext(i+1); };
+    }
+    importNext(0);
+
+  } catch(err){
+    alert('Error reading backup file: '+err.message);
+    document.getElementById('importProgress').style.display = 'none';
+  }
+}
+
+function finishImport(newCountries, newFiles){
+  document.getElementById('importPbarFill').style.width = '100%';
+  document.getElementById('importProgressTitle').textContent = '✅ Import complete!';
+  document.getElementById('importProgressSub').textContent =
+    newCountries + ' new countr'+(newCountries!==1?'ies':'y')+' and '+newFiles+' file'+(newFiles!==1?'s':'')+' imported successfully.';
+  setTimeout(function(){
+    document.getElementById('importProgress').style.display = 'none';
+    renderCountryGrid();
+    renderSidebarCountries();
+    setBadge('green', countries.length+' countr'+(countries.length!==1?'ies':'y'));
+    showStatus('ok','✅ Import complete — '+newCountries+' countr'+(newCountries!==1?'ies':'y')+' and '+newFiles+' file'+(newFiles!==1?'s':'')+' added.');
+  }, 2000);
+}
+function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+function highlightMatch(val, query, caseSens){
+  var v = escHtml(val);
+  if(!query) return v;
+  var flags = caseSens?'g':'gi';
+  try { v=v.replace(new RegExp('('+query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')',flags),'<mark style="background:#fef08a;border-radius:2px">$1</mark>'); } catch(e){}
+  return v;
+}
+
+function setPbar(pct, label){
+  document.getElementById('pbarFill').style.width = pct+'%';
+  document.getElementById('pbarLabel').textContent = label;
+}
+
+function showStatus(type, msg, spinning){
+  var bar = document.getElementById('statusBar');
+  var spin = document.getElementById('statusSpin');
+  var msgEl = document.getElementById('statusMsg');
+  bar.className = 'status-bar' + (type==='ok'?' status-ok':type==='warn'?' status-warn':type==='err'?' status-err':'');
+  spin.style.display = spinning ? 'block' : 'none';
+  msgEl.textContent = msg||'';
+}
+
+function setBadge(type, text){
+  var el = document.getElementById('statusBadge');
+  el.className = 'topbar-badge badge-'+(type==='ok'||type==='green'?'green':type==='warn'||type==='amber'?'amber':'blue');
+  el.textContent = text;
+}
+
+// ════════════════════════════════════════════════════════
+//  PROGRESS BAR
+// ════════════════════════════════════════════════════════
+function setPbar(pct, label){
+  document.getElementById('pbarFill').style.width = pct+'%';
+  document.getElementById('pbarLabel').textContent = label;
+}
+
+// ════════════════════════════════════════════════════════
+//  HELP MODAL (stub — can be expanded)
+// ════════════════════════════════════════════════════════
+function showHelp(){
+  alert('MSD Division Excel Data Search v4.0\n\nHow to use:\n1. Click + Add Country to create a country\n2. Open the country and upload Excel files\n3. Search for any number or value\n4. Use FX Rate Files (sidebar) to add exchange rates\n5. Use the Running Sum and currency converter below results');
+}
+
+</script>
+</body>
+</html>
